@@ -1,0 +1,27 @@
+name: build-and-publish
+on:
+  push:
+    branches: [main]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.5"
+
+      - name: Build api.etin.dev
+        run: cd cmd/api && CGO_ENABLED=0 go build -o build/api
+
+      - name: Deploy via SSH
+        uses: SamKirkland/web-deploy@v1
+        with:
+          target-server: ${{ secrets.SSH_HOST }}
+          remote-user: ${{ secrets.SSH_USER }}
+          private-ssh-key: ${{ secrets.SSH_KEY }}
+          source-path: ./cmd/api/build/
+          destination-path: ./
+          rsync-options: --chmod=+X -a
