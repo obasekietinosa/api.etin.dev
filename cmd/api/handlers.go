@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -35,37 +34,12 @@ func (app *application) getCreateRolesHandler(w http.ResponseWriter, r *http.Req
 	switch r.Method {
 	case http.MethodGet:
 		{
-			roles := []data.Role{
-				{
-					ID:          1,
-					CreatedAt:   time.Now(),
-					UpdatedAt:   time.Now(),
-					DeletedAt:   time.Time{},
-					StartDate:   time.Date(2023, time.October, 1, 0, 0, 0, 0, time.UTC),
-					EndDate:     time.Time{},
-					Title:       "Technical Lead",
-					Subtitle:    "Content Management",
-					Company:     "Accurx",
-					CompanyIcon: "/accurx.png",
-					Slug:        "tech-lead-accurx-w87xbv9402",
-					Description: "I'm currently technical lead for the Content Management team at Accurx. Our remit involves maintaining a broad spectrum of existing functionality as well as evolving...",
-					Skills:      []string{"JavaScript", "React", "Typescript", "C#"},
-				},
-				{
-					ID:          2,
-					CreatedAt:   time.Now(),
-					UpdatedAt:   time.Now(),
-					DeletedAt:   time.Time{},
-					StartDate:   time.Date(2023, time.October, 1, 0, 0, 0, 0, time.UTC),
-					EndDate:     time.Time{},
-					Title:       "Software Engineer",
-					Subtitle:    "",
-					Company:     "Proper",
-					CompanyIcon: "/proper.png",
-					Slug:        "software-engineer-proper-k921b2j0",
-					Description: "At Proper, I was one of 3 engineers who worked to launch our digital sleep improvement tools as well as maintain our retail website. On a small team, I worked as a full-stack software engineer, delivering on the frontend in React and on the backend in Nest.js",
-					Skills:      []string{"React", "Typescript", "Node.js", "Nest.js", "Headless Content Management"},
-				},
+			roles, err := app.models.Roles.GetAll()
+
+			if err != nil {
+				app.logger.Printf("Error: %s", err)
+				app.writeError(w, http.StatusInternalServerError)
+				return
 			}
 
 			app.writeJSON(w, http.StatusOK, envelope{"roles": roles})
@@ -78,19 +52,36 @@ func (app *application) getCreateRolesHandler(w http.ResponseWriter, r *http.Req
 				EndDate     time.Time `json:"endDate"`
 				Title       string    `json:"title"`
 				Subtitle    string    `json:"subtitle"`
-				Company     string    `json:"company"`
-				CompanyIcon string    `json:"companyIcon"`
+				CompanyId   int64     `json:"companyId"`
 				Description string    `json:"description"`
 				Skills      []string  `json:"skills"`
 			}
 
 			err := app.readJSON(w, r, &input)
 			if err != nil {
+				app.logger.Print(err)
 				app.writeError(w, http.StatusBadRequest)
 				return
 			}
 
-			fmt.Fprintf(w, "%v\n", input)
+			role := &data.Role{
+				StartDate:   input.StartDate,
+				EndDate:     input.EndDate,
+				Title:       input.Title,
+				Subtitle:    input.Subtitle,
+				CompanyId:   input.CompanyId,
+				Description: input.Description,
+				Skills:      input.Skills,
+			}
+
+			err = app.models.Roles.Insert(role)
+			if err != nil {
+				app.logger.Printf("Error: %s", err)
+				app.writeError(w, http.StatusBadRequest)
+				return
+			}
+
+			app.writeJSON(w, http.StatusCreated, envelope{"role": role})
 		}
 	}
 }
@@ -124,20 +115,11 @@ func (app *application) getRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	role := data.Role{
-		ID:          id,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-		DeletedAt:   time.Time{},
-		StartDate:   time.Date(2023, time.October, 1, 0, 0, 0, 0, time.UTC),
-		EndDate:     time.Time{},
-		Title:       "Technical Lead",
-		Subtitle:    "Content Management",
-		Company:     "Accurx",
-		CompanyIcon: "/accurx.png",
-		Slug:        "tech-lead-accurx-w87xbv9402",
-		Description: "I'm currently technical lead for the Content Management team at Accurx. Our remit involves maintaining a broad spectrum of existing functionality as well as evolving...",
-		Skills:      []string{"JavaScript", "React", "Typescript", "C#"},
+	role, err := app.models.Roles.Get(id)
+	if err != nil {
+		app.logger.Printf("A problem fetching roleid: %d Error: %s", id, err)
+		app.writeError(w, http.StatusNotFound)
+		return
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"role": role})
@@ -150,35 +132,26 @@ func (app *application) updateRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	role, err := app.models.Roles.Get(id)
+	if err != nil {
+		app.logger.Printf("Could not retrieve model. Error: %s", err)
+		app.writeError(w, http.StatusNotFound)
+		return
+	}
+
 	var input struct {
 		StartDate   *time.Time `json:"startDate"`
 		EndDate     *time.Time `json:"endDate"`
 		Title       *string    `json:"title"`
 		Subtitle    *string    `json:"subtitle"`
-		Company     *string    `json:"company"`
-		CompanyIcon *string    `json:"companyIcon"`
+		CompanyId   *int64     `json:"companyId"`
 		Description *string    `json:"description"`
 		Skills      []string   `json:"skills"`
 	}
 
-	role := data.Role{
-		ID:          id,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-		DeletedAt:   time.Time{},
-		StartDate:   time.Date(2023, time.October, 1, 0, 0, 0, 0, time.UTC),
-		EndDate:     time.Time{},
-		Title:       "Technical Lead",
-		Subtitle:    "Content Management",
-		Company:     "Accurx",
-		CompanyIcon: "/accurx.png",
-		Slug:        "tech-lead-accurx-w87xbv9402",
-		Description: "I'm currently technical lead for the Content Management team at Accurx. Our remit involves maintaining a broad spectrum of existing functionality as well as evolving...",
-		Skills:      []string{"JavaScript", "React", "Typescript", "C#"},
-	}
-
 	err = app.readJSON(w, r, &input)
 	if err != nil {
+		app.logger.Printf("Could not parse input. Error: %s", err)
 		app.writeError(w, http.StatusBadRequest)
 		return
 	}
@@ -199,12 +172,8 @@ func (app *application) updateRole(w http.ResponseWriter, r *http.Request) {
 		role.Subtitle = *input.Subtitle
 	}
 
-	if input.Company != nil {
-		role.Company = *input.Company
-	}
-
-	if input.CompanyIcon != nil {
-		role.CompanyIcon = *input.CompanyIcon
+	if input.CompanyId != nil {
+		role.CompanyId = *input.CompanyId
 	}
 
 	if input.Description != nil {
@@ -213,6 +182,13 @@ func (app *application) updateRole(w http.ResponseWriter, r *http.Request) {
 
 	if len(input.Skills) > 0 {
 		role.Skills = input.Skills
+	}
+
+	err = app.models.Roles.Update(role)
+	if err != nil {
+		app.logger.Printf("Could not update role: %d. Error: %s", id, err)
+		app.writeError(w, http.StatusInternalServerError)
+		return
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"role": role})
@@ -224,5 +200,58 @@ func (app *application) deleteRole(w http.ResponseWriter, r *http.Request) {
 		app.writeError(w, http.StatusBadRequest)
 		return
 	}
-	fmt.Fprintf(w, "Deleting role with ID: %d", id)
+
+	err = app.models.Roles.Delete(id)
+	if err != nil {
+		app.writeError(w, http.StatusNotFound)
+		return
+	}
+
+	app.writeJSON(w, http.StatusNoContent, envelope{"role": nil})
+}
+
+func (app *application) getCreateCompaniesHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		{
+			companies, err := app.models.Companies.GetAll()
+			if err != nil {
+				app.writeError(w, http.StatusInternalServerError)
+				return
+			}
+
+			app.writeJSON(w, http.StatusOK, envelope{"companies": companies})
+			return
+		}
+	case http.MethodPost:
+		{
+			var input struct {
+				Name        string `json:"name"`
+				Icon        string `json:"icon"`
+				Description string `json:"description"`
+			}
+
+			err := app.readJSON(w, r, &input)
+			if err != nil {
+				app.logger.Print(err)
+				app.writeError(w, http.StatusBadRequest)
+				return
+			}
+
+			company := &data.Company{
+				Name:        input.Name,
+				Icon:        input.Icon,
+				Description: input.Description,
+			}
+
+			err = app.models.Companies.Insert(company)
+			if err != nil {
+				app.logger.Print(err)
+				app.writeError(w, http.StatusBadRequest)
+				return
+			}
+			app.writeJSON(w, http.StatusOK, envelope{"company": company})
+			return
+		}
+	}
 }
