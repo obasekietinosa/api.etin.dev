@@ -2,50 +2,37 @@ package querybuilder
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"strings"
 )
 
 type QueryBuilder struct {
-	DB         *sql.DB
-	fields     []string
-	conditions map[string]interface{}
-	table      string
+	DB     *sql.DB
+	fields []string
+	table  string
 }
 
-func (q QueryBuilder) Select(fields ...string) QueryBuilder {
-	q.fields = fields
-	return q
+func (q QueryBuilder) Select(fields ...string) SelectQueryBuilder {
+	return SelectQueryBuilder{queryBuilder: q, table: q.table, fields: fields}
 }
 
-func (q QueryBuilder) From(table string) QueryBuilder {
-	q.table = table
-	return q
-}
-
-func (q QueryBuilder) WhereEqual(column string, value interface{}) QueryBuilder {
-	q.initialiseConditions()
-	key := fmt.Sprintf("%s:%s", column, "=")
-	q.conditions[key] = value
-	return q
-}
-
-func (q *QueryBuilder) initialiseConditions() {
-	if q.conditions == nil {
-		q.conditions = make(map[string]interface{})
+func (q *QueryBuilder) addCondition(column string, value interface{}, comparer string, conditions *map[string]interface{}) {
+	if *conditions == nil {
+		*conditions = (make(map[string]interface{}))
 	}
+	key := fmt.Sprintf("%s:%s", column, comparer)
+	(*conditions)[key] = value
 }
 
-func (q QueryBuilder) buildConditionalStatement() string {
-	keys := make([]string, 0, len(q.conditions))
-	for k := range q.conditions {
+func (q QueryBuilder) buildConditionalStatement(conditions map[string]interface{}) string {
+	keys := make([]string, 0, len(conditions))
+	for k := range conditions {
 		keys = append(keys, k)
 	}
 
 	stmt := ""
 
-	if len(keys) != 0 || q.conditions != nil {
+	if len(keys) != 0 {
 		stmt += " WHERE"
 
 		for i, v := range keys {
@@ -60,47 +47,10 @@ func (q QueryBuilder) buildConditionalStatement() string {
 	return stmt
 }
 
-func (q QueryBuilder) BuildQuery() (*string, error) {
-	if len(q.fields) == 0 || q.table == "" {
-		err := errors.New("Incorrectly formatted query. Ensure fields and base tables are set")
-		return nil, err
+func (q QueryBuilder) buildParameters(parameters map[string]interface{}) []interface{} {
+	values := make([]interface{}, 0, len(parameters))
+	for _, v := range parameters {
+		values = append(values, v)
 	}
-
-	fields := strings.Join(q.fields, ", ")
-
-	query := fmt.Sprintf("SELECT %s FROM %s", fields, q.table)
-	query += q.buildConditionalStatement()
-
-	return &query, nil
-}
-
-func (q QueryBuilder) Query() (*sql.Rows, error) {
-	query, err := q.BuildQuery()
-	if err != nil {
-		return nil, err
-	}
-	if len(q.conditions) > 0 {
-		values := make([]interface{}, 0, len(q.conditions))
-		for _, v := range q.conditions {
-			values = append(values, v)
-		}
-
-		return q.DB.Query(*query, values...)
-	}
-	return q.DB.Query(*query)
-}
-
-func (q QueryBuilder) QueryRow() (*sql.Row, error) {
-	query, err := q.BuildQuery()
-	if err != nil {
-		return nil, err
-	}
-	if len(q.conditions) > 0 {
-		values := make([]interface{}, 0, len(q.conditions))
-		for _, v := range q.conditions {
-			values = append(values, v)
-		}
-		return q.DB.QueryRow(*query, values...), nil
-	}
-	return q.DB.QueryRow(*query), nil
+	return values
 }
