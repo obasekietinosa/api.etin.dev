@@ -256,3 +256,25 @@ func (app *application) getCreateCompaniesHandler(w http.ResponseWriter, r *http
 		}
 	}
 }
+
+func (app *application) getUpdateDeleteCompaniesHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.URL.Path[len("/v1/companies/"):], 10, 64)
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+	switch r.Method {
+	case http.MethodGet:
+		{
+			company, err := app.models.Companies.Get(id)
+			if err != nil {
+				app.logger.Printf("Error getting all companies, error: %s", err)
+				app.writeError(w, http.StatusInternalServerError)
+				return
+			}
+
+			app.writeJSON(w, http.StatusOK, envelope{"company": company})
+			return
+		}
+	}
+}
