@@ -78,14 +78,14 @@ func (c CompanyModel) Get(companyId int64) (*Company, error) {
 		return nil, errors.New("No record found")
 	}
 
-	query := `
-		SELECT * from companies
-		WHERE id = $1;
-	`
+	rows, err := c.QB.Select("*").From("companies").WhereEqual("id", companyId).QueryRow()
+	if err != nil {
+		return nil, err
+	}
 
 	var company Company
 
-	err := c.DB.QueryRow(query, companyId).Scan(&company.ID, &company.Name, &company.Icon, &company.Description)
+	err = rows.Scan(&company.ID, &company.Name, &company.Icon, &company.Description)
 	if err != nil {
 		return nil, err
 	}

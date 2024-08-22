@@ -10,7 +10,7 @@ import (
 type QueryBuilder struct {
 	DB         *sql.DB
 	fields     []string
-	conditions []string
+	conditions map[string]interface{}
 	table      string
 }
 
@@ -24,9 +24,40 @@ func (q QueryBuilder) From(table string) QueryBuilder {
 	return q
 }
 
-func (q QueryBuilder) Where(conditions []string) QueryBuilder {
-
+func (q QueryBuilder) WhereEqual(column string, value interface{}) QueryBuilder {
+	q.initialiseConditions()
+	key := fmt.Sprintf("%s:%s", column, "=")
+	q.conditions[key] = value
 	return q
+}
+
+func (q *QueryBuilder) initialiseConditions() {
+	if q.conditions == nil {
+		q.conditions = make(map[string]interface{})
+	}
+}
+
+func (q QueryBuilder) buildConditionalStatement() string {
+	keys := make([]string, 0, len(q.conditions))
+	for k := range q.conditions {
+		keys = append(keys, k)
+	}
+
+	stmt := ""
+
+	if len(keys) != 0 || q.conditions != nil {
+		stmt += " WHERE"
+
+		for i, v := range keys {
+			if i > 0 {
+				stmt += " AND"
+			}
+			columnAndComparator := strings.Split(v, ":")
+			stmt += fmt.Sprintf(" %s %s $%d", columnAndComparator[0], columnAndComparator[1], i+1)
+		}
+	}
+
+	return stmt
 }
 
 func (q QueryBuilder) BuildQuery() (*string, error) {
@@ -38,10 +69,7 @@ func (q QueryBuilder) BuildQuery() (*string, error) {
 	fields := strings.Join(q.fields, ", ")
 
 	query := fmt.Sprintf("SELECT %s FROM %s", fields, q.table)
-
-	if len(q.conditions) > 0 {
-		query += fmt.Sprintf(" WHERE %s", strings.Join(q.conditions, "AND "))
-	}
+	query += q.buildConditionalStatement()
 
 	return &query, nil
 }
@@ -51,6 +79,28 @@ func (q QueryBuilder) Query() (*sql.Rows, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(q.conditions) > 0 {
+		values := make([]interface{}, 0, len(q.conditions))
+		for _, v := range q.conditions {
+			values = append(values, v)
+		}
 
+		return q.DB.Query(*query, values...)
+	}
 	return q.DB.Query(*query)
+}
+
+func (q QueryBuilder) QueryRow() (*sql.Row, error) {
+	query, err := q.BuildQuery()
+	if err != nil {
+		return nil, err
+	}
+	if len(q.conditions) > 0 {
+		values := make([]interface{}, 0, len(q.conditions))
+		for _, v := range q.conditions {
+			values = append(values, v)
+		}
+		return q.DB.QueryRow(*query, values...), nil
+	}
+	return q.DB.QueryRow(*query), nil
 }
