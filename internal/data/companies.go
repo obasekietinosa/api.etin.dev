@@ -16,12 +16,12 @@ type Company struct {
 }
 
 type CompanyModel struct {
-	DB *sql.DB
-	QB *querybuilder.QueryBuilder
+	DB    *sql.DB
+	Query *querybuilder.QueryBuilder
 }
 
 func (c CompanyModel) GetAll() ([]*Company, error) {
-	rows, err := c.QB.Select(
+	rows, err := c.Query.Select(
 		"id",
 		"name",
 		"icon",
@@ -78,14 +78,14 @@ func (c CompanyModel) Get(companyId int64) (*Company, error) {
 		return nil, errors.New("No record found")
 	}
 
-	rows, err := c.QB.Select("*").From("companies").WhereEqual("id", companyId).QueryRow()
+	row, err := c.Query.Select("*").From("companies").WhereEqual("id", companyId).QueryRow()
 	if err != nil {
 		return nil, err
 	}
 
 	var company Company
 
-	err = rows.Scan(&company.ID, &company.Name, &company.Icon, &company.Description)
+	err = row.Scan(&company.ID, &company.Name, &company.Icon, &company.Description)
 	if err != nil {
 		return nil, err
 	}

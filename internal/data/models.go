@@ -14,7 +14,7 @@ type Models struct {
 func NewModels(db *sql.DB) Models {
 	return Models{
 		Roles:     RoleModel{DB: db},
-		Companies: CompanyModel{DB: db, QB: &querybuilder.QueryBuilder{DB: db}},
+		Companies: CompanyModel{DB: db, Query: &querybuilder.QueryBuilder{DB: db}},
 	}
 
 }
