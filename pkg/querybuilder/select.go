@@ -11,18 +11,12 @@ type SelectQueryBuilder struct {
 	queryBuilder QueryBuilder
 	fields       []string
 	table        string
-	conditions   map[string]interface{}
+	conditions   ClauseMap
 }
 
 func (q SelectQueryBuilder) From(table string) SelectQueryBuilder {
 	q.table = table
 	return q
-}
-
-func (q *SelectQueryBuilder) initialiseConditions() {
-	if q.conditions == nil {
-		q.conditions = make(map[string]interface{})
-	}
 }
 
 func (q SelectQueryBuilder) WhereEqual(column string, value interface{}) SelectQueryBuilder {

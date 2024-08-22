@@ -6,6 +6,8 @@ import (
 	"strings"
 )
 
+type ClauseMap map[string]interface{}
+
 type QueryBuilder struct {
 	DB     *sql.DB
 	fields []string
@@ -16,7 +18,7 @@ func (q QueryBuilder) Select(fields ...string) SelectQueryBuilder {
 	return SelectQueryBuilder{queryBuilder: q, table: q.table, fields: fields}
 }
 
-func (q *QueryBuilder) addCondition(column string, value interface{}, comparer string, conditions *map[string]interface{}) {
+func (q *QueryBuilder) addCondition(column string, value interface{}, comparer string, conditions *ClauseMap) {
 	if *conditions == nil {
 		*conditions = (make(map[string]interface{}))
 	}
@@ -24,7 +26,7 @@ func (q *QueryBuilder) addCondition(column string, value interface{}, comparer s
 	(*conditions)[key] = value
 }
 
-func (q QueryBuilder) buildConditionalStatement(conditions map[string]interface{}) string {
+func (q QueryBuilder) buildConditionalStatement(conditions ClauseMap) string {
 	keys := make([]string, 0, len(conditions))
 	for k := range conditions {
 		keys = append(keys, k)
@@ -40,14 +42,15 @@ func (q QueryBuilder) buildConditionalStatement(conditions map[string]interface{
 				stmt += " AND"
 			}
 			columnAndComparator := strings.Split(v, ":")
-			stmt += fmt.Sprintf(" %s %s $%d", columnAndComparator[0], columnAndComparator[1], i+1)
+			column, comparer := columnAndComparator[0], columnAndComparator[1]
+			stmt += fmt.Sprintf(" %s %s $%d", column, comparer, i+1)
 		}
 	}
 
 	return stmt
 }
 
-func (q QueryBuilder) buildParameters(parameters map[string]interface{}) []interface{} {
+func (q QueryBuilder) buildParameters(parameters ClauseMap) []interface{} {
 	values := make([]interface{}, 0, len(parameters))
 	for _, v := range parameters {
 		values = append(values, v)
