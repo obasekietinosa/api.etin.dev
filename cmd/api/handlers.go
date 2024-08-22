@@ -216,6 +216,7 @@ func (app *application) getCreateCompaniesHandler(w http.ResponseWriter, r *http
 		{
 			companies, err := app.models.Companies.GetAll()
 			if err != nil {
+				app.logger.Printf("Error getting all companies, error: %s", err)
 				app.writeError(w, http.StatusInternalServerError)
 				return
 			}
