@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 
+	"api.etin.dev/pkg/querybuilder"
 	_ "github.com/lib/pq"
 )
 
@@ -16,14 +17,16 @@ type Company struct {
 
 type CompanyModel struct {
 	DB *sql.DB
+	QB *querybuilder.QueryBuilder
 }
 
 func (c CompanyModel) GetAll() ([]*Company, error) {
-	query := `
-			SELECT id, name, icon, description FROM companies;
-	`
+	rows, err := c.QB.Select(
+		"id",
+		"name",
+		"icon",
+		"description").From("companies").Query()
 
-	rows, err := c.DB.Query(query)
 	if err != nil {
 		return nil, err
 	}
