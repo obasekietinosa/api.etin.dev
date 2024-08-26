@@ -24,7 +24,7 @@ func (q SelectQueryBuilder) WhereEqual(column string, value interface{}) SelectQ
 	return q
 }
 
-func (q SelectQueryBuilder) BuildQuery() (*string, error) {
+func (q SelectQueryBuilder) buildQuery() (*string, error) {
 	if len(q.fields) == 0 || q.table == "" {
 		err := errors.New("Incorrectly formatted query. Ensure fields and base tables are set")
 		return nil, err
@@ -33,13 +33,13 @@ func (q SelectQueryBuilder) BuildQuery() (*string, error) {
 	fields := strings.Join(q.fields, ", ")
 
 	query := fmt.Sprintf("SELECT %s FROM %s", fields, q.table)
-	query += q.queryBuilder.buildConditionalStatement(q.conditions)
+	query += q.queryBuilder.buildConditionalStatement(q.conditions, 0)
 
 	return &query, nil
 }
 
 func (q SelectQueryBuilder) Query() (*sql.Rows, error) {
-	query, err := q.BuildQuery()
+	query, err := q.buildQuery()
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,7 @@ func (q SelectQueryBuilder) Query() (*sql.Rows, error) {
 }
 
 func (q SelectQueryBuilder) QueryRow() (*sql.Row, error) {
-	query, err := q.BuildQuery()
+	query, err := q.buildQuery()
 	if err != nil {
 		return nil, err
 	}
