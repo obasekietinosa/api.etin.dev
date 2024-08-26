@@ -94,17 +94,27 @@ func (c CompanyModel) Get(companyId int64) (*Company, error) {
 }
 
 func (c CompanyModel) Update(company *Company) error {
-	query := `
-		UPDATE companies
-		SET
-			name = $1
-			icon = $2
-			description = $3
-		WHERE id = $4;
-	`
+	values := querybuilder.ClauseMap{
+		"name":        company.Name,
+		"icon":        company.Icon,
+		"description": company.Description,
+	}
 
-	args := []interface{}{company.Name, company.Icon, company.Description, company.ID}
-	return c.DB.QueryRow(query, args...).Scan()
+	results, err := c.Query.SetBaseTable("companies").Update(values).WhereEqual("id", company.ID).Exec()
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := results.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("No record found")
+	}
+
+	return nil
 }
 
 func (c CompanyModel) Delete(company *Company) error {
