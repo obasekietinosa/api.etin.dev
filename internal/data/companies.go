@@ -25,7 +25,7 @@ func (c CompanyModel) GetAll() ([]*Company, error) {
 		"id",
 		"name",
 		"icon",
-		"description").From("companies").Query()
+		"description").From("companies").OrderBy("id", "asc").Query()
 
 	if err != nil {
 		return nil, err
