@@ -8,14 +8,23 @@ import (
 )
 
 type SelectQueryBuilder struct {
-	queryBuilder QueryBuilder
-	fields       []string
-	table        string
-	conditions   ClauseMap
+	queryBuilder  QueryBuilder
+	fields        []string
+	table         string
+	conditions    ClauseMap
+	sortDirection string
+	sortColumn    string
 }
 
 func (q SelectQueryBuilder) From(table string) SelectQueryBuilder {
 	q.table = table
+	return q
+}
+
+func (q SelectQueryBuilder) OrderBy(column string, sortDirection string) SelectQueryBuilder {
+	q.sortColumn = column
+	q.sortDirection = sortDirection
+
 	return q
 }
 
@@ -34,6 +43,10 @@ func (q SelectQueryBuilder) buildQuery() (*string, error) {
 
 	query := fmt.Sprintf("SELECT %s FROM %s", fields, q.table)
 	query += q.queryBuilder.buildConditionalStatement(q.conditions, 0)
+
+	if q.sortColumn != "" {
+		query += fmt.Sprintf(" ORDER BY %s %s", q.sortColumn, q.sortDirection)
+	}
 
 	return &query, nil
 }
