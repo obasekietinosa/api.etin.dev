@@ -118,12 +118,7 @@ func (c CompanyModel) Update(company *Company) error {
 }
 
 func (c CompanyModel) Delete(company *Company) error {
-	query := `
-		DELETE from companies
-		WHERE id = $1;
-	`
-
-	results, err := c.DB.Exec(query)
+	results, err := c.Query.SetBaseTable("companies").Delete().WhereEqual("id", company.ID).Exec()
 	if err != nil {
 		return err
 	}
