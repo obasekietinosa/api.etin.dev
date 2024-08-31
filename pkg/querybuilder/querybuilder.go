@@ -27,6 +27,10 @@ func (q QueryBuilder) Update(values ClauseMap) UpdateQueryBuilder {
 	return UpdateQueryBuilder{queryBuilder: q, table: q.table, values: values}
 }
 
+func (q QueryBuilder) Insert(values ClauseMap) InsertQueryBuilder {
+	return InsertQueryBuilder{queryBuilder: q, table: q.table, values: values}
+}
+
 func (q *QueryBuilder) addCondition(column string, value interface{}, comparer string, conditions *ClauseMap) {
 	if *conditions == nil {
 		*conditions = (make(map[string]interface{}))
