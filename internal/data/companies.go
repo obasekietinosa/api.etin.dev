@@ -60,17 +60,17 @@ func (c CompanyModel) GetAll() ([]*Company, error) {
 }
 
 func (c CompanyModel) Insert(company *Company) error {
-	query := `
-		INSERT INTO companies (
-			name,
-			icon,
-			description
-		) VALUES ($1, $2, $3)
-		RETURNING id;
-	`
+	values := querybuilder.ClauseMap{
+		"name":        company.Name,
+		"icon":        company.Icon,
+		"description": company.Description,
+	}
 
-	args := []interface{}{company.Name, company.Icon, company.Description}
-	return c.DB.QueryRow(query, args...).Scan(&company.ID)
+	row, err := c.Query.SetBaseTable("companies").Insert(values).Returning("id").QueryRow()
+	if err != nil {
+		return err
+	}
+	return row.Scan(&company.ID)
 }
 
 func (c CompanyModel) Get(companyId int64) (*Company, error) {
