@@ -78,7 +78,7 @@ func (c CompanyModel) Get(companyId int64) (*Company, error) {
 		return nil, errors.New("No record found")
 	}
 
-	row, err := c.Query.Select("*").From("companies").WhereEqual("id", companyId).QueryRow()
+	row, err := c.Query.Select("id", "name", "icon", "description").From("companies").WhereEqual("id", companyId).QueryRow()
 	if err != nil {
 		return nil, err
 	}
