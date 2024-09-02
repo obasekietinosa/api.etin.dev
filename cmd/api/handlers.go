@@ -319,5 +319,23 @@ func (app *application) getUpdateDeleteCompaniesHandler(w http.ResponseWriter, r
 			app.writeJSON(w, http.StatusAccepted, envelope{"company": company})
 			return
 		}
+	case http.MethodDelete:
+		{
+			company, err := app.models.Companies.Get(id)
+			if err != nil {
+				app.logger.Printf("Error getting company with ID: %d, error: %s", id, err)
+				app.writeError(w, http.StatusInternalServerError)
+				return
+			}
+			err = app.models.Companies.Delete(company)
+			if err != nil {
+				app.logger.Printf("Could not update company with ID: %d. Error: %s", id, err)
+				app.writeError(w, http.StatusBadRequest)
+				return
+			}
+			app.writeJSON(w, http.StatusNoContent, nil)
+			return
+
+		}
 	}
 }
