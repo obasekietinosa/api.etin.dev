@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"api.etin.dev/pkg/querybuilder"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 )
@@ -27,7 +28,8 @@ type Role struct {
 }
 
 type RoleModel struct {
-	DB *sql.DB
+	DB    *sql.DB
+	Query *querybuilder.QueryBuilder
 }
 
 func (r RoleModel) Insert(role *Role) error {
@@ -63,29 +65,20 @@ func (r RoleModel) Get(roleId int64) (*Role, error) {
 		return nil, errors.New("record not found")
 	}
 
-	query := `
-		SELECT 
-			roles.id AS id,
-			roles.createdAt AS createdAt,
-			roles.updatedAt AS updatedAt,
-			roles.startDate AS startDate,
-			roles.endDate AS endDate,
-			roles.title AS title,
-			roles.subtitle AS subtitle,
-			roles.slug AS slug,
-			roles.description AS description,
-			roles.skills AS skills,
-			companies.id as companyId,
-			companies.name as company,
-			companies.icon as companyIcon
-		FROM roles
-		LEFT JOIN companies ON roles.companyId = companies.id
-		WHERE roles.id = $1 AND roles.deletedAt IS NULL;
-	`
+	row, err := r.Query.SetBaseTable("roles").
+		Select(
+			"roles.id AS id", "roles.createdAt AS createdAt", "roles.updatedAt AS updatedAt", "roles.startDate AS startDate",
+			"roles.endDate AS endDate", "roles.title AS title", "roles.subtitle AS subtitle", "roles.slug AS slug",
+			"roles.description AS description", "roles.skills AS skills",
+			"companies.id as companyId", "companies.name as company", "companies.icon as companyIcon").
+		LeftJoin("companies", "id", "companyId").
+		WhereEqual("roles.deletedAt", nil).
+		WhereEqual("roles.id", roleId).
+		QueryRow()
 
 	var role Role
 
-	err := r.DB.QueryRow(query, roleId).Scan(
+	err = row.Scan(
 		&role.ID,
 		&role.CreatedAt,
 		&role.UpdatedAt,
@@ -172,28 +165,16 @@ func (r RoleModel) Delete(roleId int64) error {
 }
 
 func (r RoleModel) GetAll() ([]*Role, error) {
-	query := `
-		SELECT 
-		roles.id AS id,
-		roles.createdAt AS createdAt,
-		roles.updatedAt AS updatedAt,
-		roles.startDate AS startDate,
-		roles.endDate AS endDate,
-		roles.title AS title,
-		roles.subtitle AS subtitle,
-		roles.slug AS slug,
-		roles.description AS description,
-		roles.skills AS skills,
-		roles.companyId AS companyId,
-		companies.name AS company,
-		companies.icon AS companyIcon
-		FROM roles
-		LEFT JOIN companies 
-		ON roles.companyId = companies.id
-		ORDER BY startDate desc;
-	`
+	rows, err := r.Query.SetBaseTable("roles").Select(
+		"roles.id AS id", "roles.createdAt AS createdAt", "roles.updatedAt AS updatedAt", "roles.startDate AS startDate",
+		"roles.endDate AS endDate", "roles.title AS title", "roles.subtitle AS subtitle", "roles.slug AS slug",
+		"roles.description AS description", "roles.skills AS skills", "roles.companyId AS companyId",
+		"companies.name AS company", "companies.icon AS companyIcon",
+	).
+		LeftJoin("companies", "id", "companyId").
+		OrderBy("startDate", "desc").
+		Query()
 
-	rows, err := r.DB.Query(query)
 	if err != nil {
 		return nil, err
 	}
