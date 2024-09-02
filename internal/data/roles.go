@@ -165,28 +165,16 @@ func (r RoleModel) Delete(roleId int64) error {
 }
 
 func (r RoleModel) GetAll() ([]*Role, error) {
-	query := `
-		SELECT 
-		roles.id AS id,
-		roles.createdAt AS createdAt,
-		roles.updatedAt AS updatedAt,
-		roles.startDate AS startDate,
-		roles.endDate AS endDate,
-		roles.title AS title,
-		roles.subtitle AS subtitle,
-		roles.slug AS slug,
-		roles.description AS description,
-		roles.skills AS skills,
-		roles.companyId AS companyId,
-		companies.name AS company,
-		companies.icon AS companyIcon
-		FROM roles
-		LEFT JOIN companies 
-		ON roles.companyId = companies.id
-		ORDER BY startDate desc;
-	`
+	rows, err := r.Query.SetBaseTable("roles").Select(
+		"roles.id AS id", "roles.createdAt AS createdAt", "roles.updatedAt AS updatedAt", "roles.startDate AS startDate",
+		"roles.endDate AS endDate", "roles.title AS title", "roles.subtitle AS subtitle", "roles.slug AS slug",
+		"roles.description AS description", "roles.skills AS skills", "roles.companyId AS companyId",
+		"companies.name AS company", "companies.icon AS companyIcon",
+	).
+		LeftJoin("companies", "id", "companyId").
+		OrderBy("startDate", "desc").
+		Query()
 
-	rows, err := r.DB.Query(query)
 	if err != nil {
 		return nil, err
 	}
