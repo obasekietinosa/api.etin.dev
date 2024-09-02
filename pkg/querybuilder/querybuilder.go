@@ -53,14 +53,19 @@ func (q QueryBuilder) buildConditionalStatement(conditions ClauseMap, preparedVa
 
 	if len(keys) != 0 {
 		stmt += " WHERE"
-
-		for i, v := range keys {
-			if i > 0 {
+		preparedStatementCount := 0
+		for conditionIndex, v := range keys {
+			if conditionIndex > 0 {
 				stmt += " AND"
 			}
 			columnAndComparator := strings.Split(v, ":")
 			column, comparer := columnAndComparator[0], columnAndComparator[1]
-			stmt += fmt.Sprintf(" %s %s $%d", column, comparer, i+preparedVariableOffset+1)
+			if comparer == "IS NULL" || comparer == "IS NOT NULL" {
+				stmt += fmt.Sprintf(" %s %s", column, comparer)
+			} else {
+				stmt += fmt.Sprintf(" %s %s $%d", column, comparer, preparedStatementCount+preparedVariableOffset+1)
+				preparedStatementCount++
+			}
 		}
 	}
 
@@ -70,7 +75,9 @@ func (q QueryBuilder) buildConditionalStatement(conditions ClauseMap, preparedVa
 func (q QueryBuilder) buildParameters(parameters ClauseMap) []interface{} {
 	values := make([]interface{}, 0, len(parameters))
 	for _, v := range parameters {
-		values = append(values, v)
+		if v != nil {
+			values = append(values, v)
+		}
 	}
 	return values
 }

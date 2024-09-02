@@ -43,7 +43,11 @@ func (q SelectQueryBuilder) OrderBy(column string, sortDirection string) SelectQ
 }
 
 func (q SelectQueryBuilder) WhereEqual(column string, value interface{}) SelectQueryBuilder {
-	q.queryBuilder.addCondition(column, value, "=", &q.conditions)
+	if value == nil {
+		q.queryBuilder.addCondition(column, nil, "IS NULL", &q.conditions)
+	} else {
+		q.queryBuilder.addCondition(column, value, "=", &q.conditions)
+	}
 	return q
 }
 
