@@ -9,7 +9,7 @@ import (
 type DeleteQueryBuilder struct {
 	queryBuilder QueryBuilder
 	table        string
-	conditions   ClauseMap
+	conditions   Clauses
 }
 
 func (q DeleteQueryBuilder) buildQuery() (*string, error) {
@@ -24,7 +24,7 @@ func (q DeleteQueryBuilder) buildQuery() (*string, error) {
 	}
 
 	query := fmt.Sprintf("DELETE FROM %s", q.table)
-	query += q.queryBuilder.buildConditionalStatement(q.conditions, 0)
+	query += q.queryBuilder.buildConditionalStatement(q.conditions)
 
 	return &query, nil
 }

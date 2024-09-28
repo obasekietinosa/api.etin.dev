@@ -9,41 +9,35 @@ import (
 type UpdateQueryBuilder struct {
 	queryBuilder QueryBuilder
 	table        string
-	values       ClauseMap
-	conditions   ClauseMap
-}
-
-func (q UpdateQueryBuilder) buildColumnUpdateStatement() string {
-	keys := make([]string, 0, len(q.values))
-	for k := range q.values {
-		keys = append(keys, k)
-	}
-
-	stmt := ""
-
-	if len(keys) != 0 {
-		stmt += " SET"
-
-		for i, column := range keys {
-			if i > 0 {
-				stmt += ","
-			}
-			stmt += fmt.Sprintf(" %s = $%d", column, i+1)
-		}
-	}
-
-	return stmt
+	values       Clauses
+	conditions   Clauses
+	fields       []string
 }
 
 func (q UpdateQueryBuilder) buildPreparedStatementValues() []interface{} {
+	values := make([]interface{}, 0)
+
+	if len(q.queryBuilder.commonTableExpressions) > 0 {
+		for _, cte := range q.queryBuilder.commonTableExpressions {
+			values = append(values, cte.buildPreparedStatementValues()...)
+		}
+	}
+
 	updateValues := q.queryBuilder.buildParameters(q.values)
 	conditionValues := q.queryBuilder.buildParameters(q.conditions)
 
-	return append(updateValues, conditionValues...)
+	values = append(values, updateValues...)
+	values = append(values, conditionValues...)
+	return values
 }
 
 func (q UpdateQueryBuilder) WhereEqual(column string, value interface{}) UpdateQueryBuilder {
 	q.queryBuilder.addCondition(column, value, "=", &q.conditions)
+	return q
+}
+
+func (q UpdateQueryBuilder) Returning(fields ...string) UpdateQueryBuilder {
+	q.fields = fields
 	return q
 }
 
@@ -54,8 +48,13 @@ func (q UpdateQueryBuilder) buildQuery() (*string, error) {
 	}
 
 	query := fmt.Sprintf("UPDATE %s", q.table)
-	query += q.buildColumnUpdateStatement()
-	query += q.queryBuilder.buildConditionalStatement(q.conditions, len(q.values))
+	query += q.queryBuilder.buildColumnUpdateStatement(q.values)
+	query += q.queryBuilder.buildConditionalStatement(q.conditions)
+
+	if len(q.fields) > 0 {
+		returnedColumns := q.queryBuilder.buildReturnedColumns(q.fields)
+		query += fmt.Sprintf(" RETURNING %s", returnedColumns)
+	}
 
 	return &query, nil
 }

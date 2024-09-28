@@ -9,59 +9,19 @@ import (
 type InsertQueryBuilder struct {
 	queryBuilder QueryBuilder
 	table        string
-	values       ClauseMap
+	values       Clauses
 	fields       []string
 }
 
-func (q InsertQueryBuilder) buildValuesStatement() string {
-	keys := make([]string, 0, len(q.values))
-	for k := range q.values {
-		keys = append(keys, k)
-	}
-
-	stmt := ""
-
-	if len(keys) != 0 {
-		for i := range keys {
-			if i > 0 {
-				stmt += ", "
-			}
-			stmt += fmt.Sprintf("$%d", i+1)
-		}
-	}
-
-	return stmt
-}
-
 func (q InsertQueryBuilder) buildColumnNameStatement() string {
-	keys := make([]string, 0, len(q.values))
-	for k := range q.values {
-		keys = append(keys, k)
-	}
-
 	stmt := ""
 
-	if len(keys) != 0 {
-		for i, column := range keys {
+	if len(q.values) != 0 {
+		for i, column := range q.values {
 			if i > 0 {
 				stmt += ", "
 			}
-			stmt += fmt.Sprintf("%s", column)
-		}
-	}
-
-	return stmt
-}
-
-func (q InsertQueryBuilder) buildReturnedColumns() string {
-	stmt := ""
-
-	if len(q.fields) != 0 {
-		for i, field := range q.fields {
-			if i > 0 {
-				stmt += ", "
-			}
-			stmt += fmt.Sprintf("%s", field)
+			stmt += fmt.Sprintf("%s", column.ColumnName)
 		}
 	}
 
@@ -79,10 +39,10 @@ func (q InsertQueryBuilder) buildQuery() (*string, error) {
 	}
 
 	columnNames := q.buildColumnNameStatement()
-	columnValues := q.buildValuesStatement()
+	columnValues := q.queryBuilder.buildValuesStatement(q.values)
 	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", q.table, columnNames, columnValues)
 	if len(q.fields) > 0 {
-		returnedColumns := q.buildReturnedColumns()
+		returnedColumns := q.queryBuilder.buildReturnedColumns(q.fields)
 		query += fmt.Sprintf(" RETURNING %s", returnedColumns)
 	}
 
