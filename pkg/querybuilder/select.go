@@ -51,6 +51,20 @@ func (q SelectQueryBuilder) WhereEqual(column string, value interface{}) SelectQ
 	return q
 }
 
+func (q SelectQueryBuilder) buildPreparedStatementValues() []interface{} {
+	values := make([]interface{}, 0)
+
+	if len(q.queryBuilder.commonTableExpressions) > 0 {
+		for _, cte := range q.queryBuilder.commonTableExpressions {
+			values = append(values, cte.buildPreparedStatementValues()...)
+		}
+	}
+
+	values = append(values, q.queryBuilder.buildParameters(q.conditions)...)
+
+	return values
+}
+
 func (q SelectQueryBuilder) buildQuery() (*string, error) {
 	if len(q.fields) == 0 || q.table == "" {
 		err := errors.New("Incorrectly formatted query. Ensure fields and base tables are set")
@@ -62,10 +76,10 @@ func (q SelectQueryBuilder) buildQuery() (*string, error) {
 	query := fmt.Sprintf("SELECT %s FROM %s", fields, q.table)
 
 	if q.leftJoinTable != "" {
-		query += fmt.Sprintf(" LEFT JOIN %s ON %s.%s = %s.%s", q.leftJoinTable, q.table, q.leftJoinForeignKey, q.leftJoinTable, q.leftJoinOwnKey)
+		query += fmt.Sprintf(" LEFT JOIN %s ON %s.%s = %s.%s", q.leftJoinTable, q.table, q.leftJoinOwnKey, q.leftJoinTable, q.leftJoinForeignKey)
 	}
 
-	query += q.queryBuilder.buildConditionalStatement(q.conditions, 0)
+	query += q.queryBuilder.buildConditionalStatement(q.conditions)
 
 	if q.sortColumn != "" {
 		query += fmt.Sprintf(" ORDER BY %s %s", q.sortColumn, q.sortDirection)
@@ -91,8 +105,8 @@ func (q SelectQueryBuilder) QueryRow() (*sql.Row, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(q.conditions) > 0 {
-		values := q.queryBuilder.buildParameters(q.conditions)
+	if len(q.conditions) > 0 || len(q.queryBuilder.commonTableExpressions) > 0 {
+		values := q.buildPreparedStatementValues()
 		return q.queryBuilder.DB.QueryRow(*query, values...), nil
 	}
 	return q.queryBuilder.DB.QueryRow(*query), nil
