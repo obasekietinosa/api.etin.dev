@@ -60,10 +60,10 @@ func (c CompanyModel) GetAll() ([]*Company, error) {
 }
 
 func (c CompanyModel) Insert(company *Company) error {
-	values := querybuilder.ClauseMap{
-		"name":        company.Name,
-		"icon":        company.Icon,
-		"description": company.Description,
+	values := querybuilder.Clauses{
+		querybuilder.Clause{ColumnName: "name", Value: company.Name},
+		querybuilder.Clause{ColumnName: "icon", Value: company.Icon},
+		querybuilder.Clause{ColumnName: "description", Value: company.Description},
 	}
 
 	row, err := c.Query.SetBaseTable("companies").Insert(values).Returning("id").QueryRow()
@@ -94,10 +94,10 @@ func (c CompanyModel) Get(companyId int64) (*Company, error) {
 }
 
 func (c CompanyModel) Update(company *Company) error {
-	values := querybuilder.ClauseMap{
-		"name":        company.Name,
-		"icon":        company.Icon,
-		"description": company.Description,
+	values := querybuilder.Clauses{
+		querybuilder.Clause{ColumnName: "name", Value: company.Name},
+		querybuilder.Clause{ColumnName: "icon", Value: company.Icon},
+		querybuilder.Clause{ColumnName: "description", Value: company.Description},
 	}
 
 	results, err := c.Query.SetBaseTable("companies").Update(values).WhereEqual("id", company.ID).Exec()
