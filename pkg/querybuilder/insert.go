@@ -9,24 +9,19 @@ import (
 type InsertQueryBuilder struct {
 	queryBuilder QueryBuilder
 	table        string
-	values       ClauseMap
+	values       Clauses
 	fields       []string
 }
 
 func (q InsertQueryBuilder) buildColumnNameStatement() string {
-	keys := make([]string, 0, len(q.values))
-	for k := range q.values {
-		keys = append(keys, k)
-	}
-
 	stmt := ""
 
-	if len(keys) != 0 {
-		for i, column := range keys {
+	if len(q.values) != 0 {
+		for i, column := range q.values {
 			if i > 0 {
 				stmt += ", "
 			}
-			stmt += fmt.Sprintf("%s", column)
+			stmt += fmt.Sprintf("%s", column.ColumnName)
 		}
 	}
 

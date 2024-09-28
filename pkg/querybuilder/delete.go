@@ -9,7 +9,7 @@ import (
 type DeleteQueryBuilder struct {
 	queryBuilder QueryBuilder
 	table        string
-	conditions   ClauseMap
+	conditions   Clauses
 }
 
 func (q DeleteQueryBuilder) buildQuery() (*string, error) {

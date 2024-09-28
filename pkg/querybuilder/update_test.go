@@ -7,10 +7,10 @@ import (
 
 func TestUpdateQueryBuilder_Fails_Without_Where(t *testing.T) {
 	qb := QueryBuilder{}
-	values := ClauseMap{
-		"name": "John",
-		"age":  31,
-	}
+	values := append(Clauses{},
+		Clause{ColumnName: "name", Value: "John"},
+		Clause{ColumnName: "age", Value: 31},
+	)
 
 	updateQB := qb.Update(values)
 
@@ -23,14 +23,14 @@ func TestUpdateQueryBuilder_Fails_Without_Where(t *testing.T) {
 
 func TestUpdateQueryBuilder_WhereEqual(t *testing.T) {
 	qb := QueryBuilder{}
-	values := ClauseMap{
-		"name": "John",
-		"age":  31,
-	}
+	values := append(Clauses{},
+		Clause{ColumnName: "name", Value: "John"},
+		Clause{ColumnName: "age", Value: 31},
+	)
 
 	updateQB := qb.SetBaseTable("users").Update(values).WhereEqual("id", 1)
 
-	expectedConditions := ClauseMap{"id:=": 1}
+	expectedConditions := append(Clauses{}, Clause{ColumnName: "id:=", Value: 1})
 	if !reflect.DeepEqual(updateQB.conditions, expectedConditions) {
 		t.Errorf("Expected conditions to be %v, got %v", expectedConditions, updateQB.conditions)
 	}
@@ -51,9 +51,7 @@ func TestUpdateQueryBuilder_WhereEqual(t *testing.T) {
 
 func TestUpdateQueryBuilder_NoTable(t *testing.T) {
 	qb := QueryBuilder{}
-	values := ClauseMap{
-		"name": "John",
-	}
+	values := append(Clauses{}, Clause{ColumnName: "name", Value: "John"})
 
 	updateQB := qb.Update(values).WhereEqual("id", 1)
 
@@ -66,10 +64,10 @@ func TestUpdateQueryBuilder_NoTable(t *testing.T) {
 
 func TestUpdateQueryBuilder_Returning(t *testing.T) {
 	qb := QueryBuilder{}
-	values := ClauseMap{
-		"name": "John",
-		"age":  31,
-	}
+	values := append(Clauses{},
+		Clause{ColumnName: "name", Value: "John"},
+		Clause{ColumnName: "age", Value: 31},
+	)
 
 	updateQB := qb.SetBaseTable("users").Update(values).Returning("id", "updated_at")
 

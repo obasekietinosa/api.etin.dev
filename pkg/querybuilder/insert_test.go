@@ -6,10 +6,7 @@ import (
 
 func TestInsertQueryBuilder_buildColumnNameStatement(t *testing.T) {
 	qb := QueryBuilder{}
-	values := ClauseMap{
-		"name": "John",
-		"age":  30,
-	}
+	values := append(Clauses{}, Clause{ColumnName: "name", Value: "John"}, Clause{ColumnName: "age", Value: 30})
 
 	insertQB := InsertQueryBuilder{queryBuilder: qb, values: values}
 
@@ -23,10 +20,7 @@ func TestInsertQueryBuilder_buildColumnNameStatement(t *testing.T) {
 
 func TestInsertQueryBuilder_buildQuery(t *testing.T) {
 	qb := QueryBuilder{}
-	values := ClauseMap{
-		"name": "John",
-		"age":  30,
-	}
+	values := append(Clauses{}, Clause{ColumnName: "name", Value: "John"}, Clause{ColumnName: "age", Value: 30})
 
 	insertQB := qb.SetBaseTable("users").Insert(values)
 
@@ -43,9 +37,7 @@ func TestInsertQueryBuilder_buildQuery(t *testing.T) {
 
 func TestInsertQueryBuilder_NoTable(t *testing.T) {
 	qb := QueryBuilder{}
-	values := ClauseMap{
-		"name": "John",
-	}
+	values := append(Clauses{}, Clause{ColumnName: "name", Value: "John"})
 
 	insertQB := qb.Insert(values)
 
@@ -58,10 +50,7 @@ func TestInsertQueryBuilder_NoTable(t *testing.T) {
 
 func TestInsertQueryBuilder_Returning(t *testing.T) {
 	qb := QueryBuilder{}
-	values := ClauseMap{
-		"name": "John",
-		"age":  30,
-	}
+	values := append(Clauses{}, Clause{ColumnName: "name", Value: "John"}, Clause{ColumnName: "age", Value: 30})
 
 	insertQB := qb.SetBaseTable("users").Insert(values).Returning("id", "created_at")
 

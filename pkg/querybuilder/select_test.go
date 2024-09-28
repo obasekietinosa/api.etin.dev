@@ -112,7 +112,7 @@ func TestSelectQueryBuilder_WhereEqual(t *testing.T) {
 	qb := QueryBuilder{}
 	selectQB := qb.Select("id", "name").From("users").WhereEqual("age", 30)
 
-	expectedConditions := ClauseMap{"age:=": 30}
+	expectedConditions := append(Clauses{}, Clause{ColumnName: "age:=", Value: 30})
 	if !reflect.DeepEqual(selectQB.conditions, expectedConditions) {
 		t.Errorf("Expected conditions to be %v, got %v", expectedConditions, selectQB.conditions)
 	}
@@ -131,7 +131,11 @@ func TestSelectQueryBuilder_WhereEqual_Null(t *testing.T) {
 	qb := QueryBuilder{}
 	selectQB := qb.Select("id", "name").From("users").WhereEqual("age", 30).WhereEqual("deleted_at", nil).WhereEqual("category", "admin")
 
-	expectedConditions := ClauseMap{"age:=": 30, "deleted_at:IS NULL": nil, "category:=": "admin"}
+	expectedConditions := append(Clauses{},
+		Clause{ColumnName: "age:=", Value: 30},
+		Clause{ColumnName: "deleted_at:IS NULL"},
+		Clause{ColumnName: "category:=", Value: "admin"},
+	)
 	if !reflect.DeepEqual(selectQB.conditions, expectedConditions) {
 		t.Errorf("Expected conditions to be %v, got %v", expectedConditions, selectQB.conditions)
 	}

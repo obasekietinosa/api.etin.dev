@@ -12,7 +12,7 @@ type SelectQueryBuilder struct {
 
 	fields     []string
 	table      string
-	conditions ClauseMap
+	conditions Clauses
 
 	sortDirection string
 	sortColumn    string

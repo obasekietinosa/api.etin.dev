@@ -6,7 +6,11 @@ import (
 	"strings"
 )
 
-type ClauseMap map[string]interface{}
+type Clause struct {
+	ColumnName string
+	Value      interface{}
+}
+type Clauses []Clause
 
 type QueryBuilder struct {
 	DB                     *sql.DB
@@ -29,11 +33,11 @@ func (q QueryBuilder) Select(fields ...string) SelectQueryBuilder {
 	return SelectQueryBuilder{queryBuilder: q, table: q.table, fields: fields}
 }
 
-func (q QueryBuilder) Update(values ClauseMap) UpdateQueryBuilder {
+func (q QueryBuilder) Update(values Clauses) UpdateQueryBuilder {
 	return UpdateQueryBuilder{queryBuilder: q, table: q.table, values: values}
 }
 
-func (q QueryBuilder) Insert(values ClauseMap) InsertQueryBuilder {
+func (q QueryBuilder) Insert(values Clauses) InsertQueryBuilder {
 	return InsertQueryBuilder{queryBuilder: q, table: q.table, values: values}
 }
 
@@ -50,49 +54,39 @@ func (q QueryBuilder) With(query CommonQueryBuilder, name string) QueryBuilder {
 	return q
 }
 
-func (q *QueryBuilder) addCondition(column string, value interface{}, comparer string, conditions *ClauseMap) {
+func (q *QueryBuilder) addCondition(column string, value interface{}, comparer string, conditions *Clauses) {
 	if *conditions == nil {
-		*conditions = (make(map[string]interface{}))
+		*conditions = make(Clauses, 0)
 	}
 	key := fmt.Sprintf("%s:%s", column, comparer)
-	(*conditions)[key] = value
+	*conditions = append(*conditions, Clause{ColumnName: key, Value: value})
 }
 
-func (q *QueryBuilder) buildColumnUpdateStatement(values ClauseMap) string {
-	keys := make([]string, 0, len(values))
-	for k := range values {
-		keys = append(keys, k)
-	}
-
-	stmt := ""
-	i, column := 0, ""
-
-	if len(keys) != 0 {
-		stmt += " SET"
-
-		for i, column = range keys {
-			if i > 0 {
-				stmt += ","
-			}
-			stmt += fmt.Sprintf(" %s = $%d", column, i+q.preparedVariableOffset+1)
-		}
-	}
-	q.preparedVariableOffset = q.preparedVariableOffset + i + 1
-	// return fmt.Sprintf("number: %d", q.preparedVariableOffset)
-	return stmt
-}
-
-func (q *QueryBuilder) buildValuesStatement(values ClauseMap) string {
-	keys := make([]string, 0, len(values))
-	for k := range values {
-		keys = append(keys, k)
-	}
-
+func (q *QueryBuilder) buildColumnUpdateStatement(values Clauses) string {
 	stmt := ""
 	i := 0
 
-	if len(keys) != 0 {
-		for i = range keys {
+	if len(values) != 0 {
+		stmt += " SET"
+
+		for _, column := range values {
+			if i > 0 {
+				stmt += ","
+			}
+			stmt += fmt.Sprintf(" %s = $%d", column.ColumnName, i+q.preparedVariableOffset+1)
+			i++
+		}
+	}
+	q.preparedVariableOffset = q.preparedVariableOffset + i
+	return stmt
+}
+
+func (q *QueryBuilder) buildValuesStatement(values Clauses) string {
+	stmt := ""
+	i := 0
+
+	if len(values) != 0 {
+		for i = range values {
 			if i > 0 {
 				stmt += ", "
 			}
@@ -104,22 +98,17 @@ func (q *QueryBuilder) buildValuesStatement(values ClauseMap) string {
 	return stmt
 }
 
-func (q *QueryBuilder) buildConditionalStatement(conditions ClauseMap) string {
-	keys := make([]string, 0, len(conditions))
-	for k := range conditions {
-		keys = append(keys, k)
-	}
-
+func (q *QueryBuilder) buildConditionalStatement(conditions Clauses) string {
 	stmt := ""
 
-	if len(keys) != 0 {
+	if len(conditions) != 0 {
 		stmt += " WHERE"
 		preparedStatementCount := 0
-		for conditionIndex, v := range keys {
+		for conditionIndex, clause := range conditions {
 			if conditionIndex > 0 {
 				stmt += " AND"
 			}
-			columnAndComparator := strings.Split(v, ":")
+			columnAndComparator := strings.Split(clause.ColumnName, ":")
 			column, comparer := columnAndComparator[0], columnAndComparator[1]
 			if comparer == "IS NULL" || comparer == "IS NOT NULL" {
 				stmt += fmt.Sprintf(" %s %s", column, comparer)
@@ -135,11 +124,11 @@ func (q *QueryBuilder) buildConditionalStatement(conditions ClauseMap) string {
 	return stmt
 }
 
-func (q *QueryBuilder) buildParameters(parameters ClauseMap) []interface{} {
+func (q *QueryBuilder) buildParameters(parameters Clauses) []interface{} {
 	values := make([]interface{}, 0, len(parameters))
-	for _, v := range parameters {
-		if v != nil {
-			values = append(values, v)
+	for _, clause := range parameters {
+		if clause.Value != "" {
+			values = append(values, clause.Value)
 		}
 	}
 	return values

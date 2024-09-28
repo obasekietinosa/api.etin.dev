@@ -22,7 +22,7 @@ func TestDeleteQueryBuilder_WhereEqual(t *testing.T) {
 
 	DeleteQB := qb.SetBaseTable("users").Delete().WhereEqual("id", 1)
 
-	expectedConditions := ClauseMap{"id:=": 1}
+	expectedConditions := append(Clauses{}, Clause{ColumnName: "id:=", Value: 1})
 	if !reflect.DeepEqual(DeleteQB.conditions, expectedConditions) {
 		t.Errorf("Expected conditions to be %v, got %v", expectedConditions, DeleteQB.conditions)
 	}

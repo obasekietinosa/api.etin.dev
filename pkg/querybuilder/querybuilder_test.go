@@ -15,14 +15,15 @@ func TestSetBaseTable(t *testing.T) {
 }
 
 func TestInsertQueryBuilder(t *testing.T) {
+	values := append(Clauses{}, Clause{ColumnName: "name", Value: "John Doe"}, Clause{ColumnName: "age", Value: 30})
 	qb := QueryBuilder{}
-	insertQB := qb.SetBaseTable("users").Insert(ClauseMap{"name": "John Doe", "age": 30}).Returning("id", "created_at")
+	insertQB := qb.SetBaseTable("users").Insert(values).Returning("id", "created_at")
 
 	if insertQB.table != "users" {
 		t.Errorf("Expected table to be 'users', got %s", insertQB.table)
 	}
 
-	expectedValues := ClauseMap{"name": "John Doe", "age": 30}
+	expectedValues := append(Clauses{}, Clause{ColumnName: "name", Value: "John Doe"}, Clause{ColumnName: "age", Value: 30})
 	if !reflect.DeepEqual(insertQB.values, expectedValues) {
 		t.Errorf("Expected values to be %v, got %v", expectedValues, insertQB.values)
 	}
@@ -49,10 +50,10 @@ func TestDeleteQueryBuilder(t *testing.T) {
 
 func TestAddCondition(t *testing.T) {
 	qb := QueryBuilder{}
-	conditions := make(ClauseMap)
+	conditions := make(Clauses, 0)
 	qb.addCondition("age", 30, "=", &conditions)
 
-	expectedConditions := ClauseMap{"age:=": 30}
+	expectedConditions := append(Clauses{}, Clause{ColumnName: "age:=", Value: 30})
 	if !reflect.DeepEqual(conditions, expectedConditions) {
 		t.Errorf("Expected conditions to be %v, got %v", expectedConditions, conditions)
 	}
@@ -61,7 +62,10 @@ func TestAddCondition(t *testing.T) {
 func TestBuildValuesStatement(t *testing.T) {
 	qb := QueryBuilder{}
 	qb.preparedVariableOffset = 0
-	values := ClauseMap{"name": "John Doe", "age": 30}
+	values := make(Clauses, 0)
+	values = append(values,
+		Clause{ColumnName: "age:>", Value: 30},
+		Clause{ColumnName: "name:=", Value: "John Doe"})
 
 	stmt := qb.buildValuesStatement(values)
 
@@ -73,7 +77,10 @@ func TestBuildValuesStatement(t *testing.T) {
 
 func TestBuildConditionalStatement(t *testing.T) {
 	qb := QueryBuilder{}
-	conditions := ClauseMap{"age:>": 30, "name:=": "John Doe"}
+	conditions := make(Clauses, 0)
+	conditions = append(conditions,
+		Clause{ColumnName: "age:>", Value: 30},
+		Clause{ColumnName: "name:=", Value: "John Doe"})
 
 	stmt := qb.buildConditionalStatement(conditions)
 
@@ -85,7 +92,10 @@ func TestBuildConditionalStatement(t *testing.T) {
 
 func TestBuildParameters(t *testing.T) {
 	qb := QueryBuilder{}
-	parameters := ClauseMap{"age:>": 30, "name:=": "John Doe"}
+	parameters := make(Clauses, 0)
+	parameters = append(parameters,
+		Clause{ColumnName: "age:>", Value: 30},
+		Clause{ColumnName: "name:=", Value: "John Doe"})
 
 	params := qb.buildParameters(parameters)
 

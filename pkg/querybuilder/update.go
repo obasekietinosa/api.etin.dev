@@ -9,8 +9,8 @@ import (
 type UpdateQueryBuilder struct {
 	queryBuilder QueryBuilder
 	table        string
-	values       ClauseMap
-	conditions   ClauseMap
+	values       Clauses
+	conditions   Clauses
 	fields       []string
 }
 
