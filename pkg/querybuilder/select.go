@@ -8,7 +8,7 @@ import (
 )
 
 type SelectQueryBuilder struct {
-	queryBuilder QueryBuilder
+	queryBuilder *QueryBuilder
 
 	fields     []string
 	table      string
@@ -22,12 +22,12 @@ type SelectQueryBuilder struct {
 	leftJoinForeignKey string
 }
 
-func (q SelectQueryBuilder) From(table string) SelectQueryBuilder {
+func (q *SelectQueryBuilder) From(table string) *SelectQueryBuilder {
 	q.table = table
 	return q
 }
 
-func (q SelectQueryBuilder) LeftJoin(table string, ownKey string, foreignKey string) SelectQueryBuilder {
+func (q *SelectQueryBuilder) LeftJoin(table string, ownKey string, foreignKey string) *SelectQueryBuilder {
 	q.leftJoinTable = table
 	q.leftJoinOwnKey = ownKey
 	q.leftJoinForeignKey = foreignKey
@@ -35,14 +35,14 @@ func (q SelectQueryBuilder) LeftJoin(table string, ownKey string, foreignKey str
 	return q
 }
 
-func (q SelectQueryBuilder) OrderBy(column string, sortDirection string) SelectQueryBuilder {
+func (q *SelectQueryBuilder) OrderBy(column string, sortDirection string) *SelectQueryBuilder {
 	q.sortColumn = column
 	q.sortDirection = sortDirection
 
 	return q
 }
 
-func (q SelectQueryBuilder) WhereEqual(column string, value interface{}) SelectQueryBuilder {
+func (q *SelectQueryBuilder) WhereEqual(column string, value interface{}) *SelectQueryBuilder {
 	if value == nil {
 		q.queryBuilder.addCondition(column, nil, "IS NULL", &q.conditions)
 	} else {
@@ -51,7 +51,7 @@ func (q SelectQueryBuilder) WhereEqual(column string, value interface{}) SelectQ
 	return q
 }
 
-func (q SelectQueryBuilder) buildPreparedStatementValues() []interface{} {
+func (q *SelectQueryBuilder) buildPreparedStatementValues() []interface{} {
 	values := make([]interface{}, 0)
 
 	if len(q.queryBuilder.commonTableExpressions) > 0 {
@@ -65,7 +65,7 @@ func (q SelectQueryBuilder) buildPreparedStatementValues() []interface{} {
 	return values
 }
 
-func (q SelectQueryBuilder) buildQuery() (*string, error) {
+func (q *SelectQueryBuilder) buildQuery() (*string, error) {
 	if len(q.fields) == 0 || q.table == "" {
 		err := errors.New("Incorrectly formatted query. Ensure fields and base tables are set")
 		return nil, err
@@ -88,7 +88,7 @@ func (q SelectQueryBuilder) buildQuery() (*string, error) {
 	return &query, nil
 }
 
-func (q SelectQueryBuilder) Query() (*sql.Rows, error) {
+func (q *SelectQueryBuilder) Query() (*sql.Rows, error) {
 	query, err := q.buildQuery()
 	if err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (q SelectQueryBuilder) Query() (*sql.Rows, error) {
 	return q.queryBuilder.DB.Query(*query)
 }
 
-func (q SelectQueryBuilder) QueryRow() (*sql.Row, error) {
+func (q *SelectQueryBuilder) QueryRow() (*sql.Row, error) {
 	query, err := q.buildQuery()
 	if err != nil {
 		return nil, err

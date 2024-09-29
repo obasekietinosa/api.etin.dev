@@ -29,23 +29,23 @@ func (q *QueryBuilder) SetBaseTable(table string) *QueryBuilder {
 	return q
 }
 
-func (q QueryBuilder) Select(fields ...string) SelectQueryBuilder {
-	return SelectQueryBuilder{queryBuilder: q, table: q.table, fields: fields}
+func (q *QueryBuilder) Select(fields ...string) *SelectQueryBuilder {
+	return &SelectQueryBuilder{queryBuilder: q, table: q.table, fields: fields}
 }
 
-func (q QueryBuilder) Update(values Clauses) UpdateQueryBuilder {
-	return UpdateQueryBuilder{queryBuilder: q, table: q.table, values: values}
+func (q *QueryBuilder) Update(values Clauses) *UpdateQueryBuilder {
+	return &UpdateQueryBuilder{queryBuilder: q, table: q.table, values: values}
 }
 
-func (q QueryBuilder) Insert(values Clauses) InsertQueryBuilder {
-	return InsertQueryBuilder{queryBuilder: q, table: q.table, values: values}
+func (q *QueryBuilder) Insert(values Clauses) *InsertQueryBuilder {
+	return &InsertQueryBuilder{queryBuilder: q, table: q.table, values: values}
 }
 
-func (q QueryBuilder) Delete() DeleteQueryBuilder {
-	return DeleteQueryBuilder{queryBuilder: q, table: q.table}
+func (q *QueryBuilder) Delete() *DeleteQueryBuilder {
+	return &DeleteQueryBuilder{queryBuilder: q, table: q.table}
 }
 
-func (q QueryBuilder) With(query CommonQueryBuilder, name string) QueryBuilder {
+func (q *QueryBuilder) With(query CommonQueryBuilder, name string) *QueryBuilder {
 	if q.commonTableExpressions == nil {
 		q.commonTableExpressions = make([]CommonQueryBuilder, 0)
 	}
