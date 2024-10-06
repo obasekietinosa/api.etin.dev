@@ -13,6 +13,13 @@ type InsertQueryBuilder struct {
 	fields       []string
 }
 
+func (q *InsertQueryBuilder) buildPreparedStatementValues() []interface{} {
+	values := q.queryBuilder.buildCommonTableExpressionParameters()
+	values = append(values, q.queryBuilder.buildParameters(q.values))
+
+	return values
+}
+
 func (q *InsertQueryBuilder) buildColumnNameStatement() string {
 	stmt := ""
 
@@ -59,7 +66,7 @@ func (q *InsertQueryBuilder) Query() (*sql.Rows, error) {
 	if err != nil {
 		return nil, err
 	}
-	values := q.queryBuilder.buildParameters(q.values)
+	values := q.buildPreparedStatementValues()
 	return q.queryBuilder.DB.Query(*query, values...)
 }
 
@@ -69,7 +76,7 @@ func (q *InsertQueryBuilder) QueryRow() (*sql.Row, error) {
 		return nil, err
 	}
 
-	values := q.queryBuilder.buildParameters(q.values)
+	values := q.buildPreparedStatementValues()
 	return q.queryBuilder.DB.QueryRow(*query, values...), nil
 }
 
@@ -79,6 +86,6 @@ func (q *InsertQueryBuilder) Exec() (sql.Result, error) {
 		return nil, err
 	}
 
-	values := q.queryBuilder.buildParameters(q.values)
+	values := q.buildPreparedStatementValues()
 	return q.queryBuilder.DB.Exec(*query, values...)
 }
