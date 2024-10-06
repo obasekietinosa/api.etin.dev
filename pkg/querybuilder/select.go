@@ -52,14 +52,7 @@ func (q *SelectQueryBuilder) WhereEqual(column string, value interface{}) *Selec
 }
 
 func (q *SelectQueryBuilder) buildPreparedStatementValues() []interface{} {
-	values := make([]interface{}, 0)
-
-	if len(q.queryBuilder.commonTableExpressions) > 0 {
-		for _, cte := range q.queryBuilder.commonTableExpressions {
-			values = append(values, cte.buildPreparedStatementValues()...)
-		}
-	}
-
+	values := q.queryBuilder.buildCommonTableExpressionParameters()
 	values = append(values, q.queryBuilder.buildParameters(q.conditions)...)
 
 	return values
@@ -71,9 +64,14 @@ func (q *SelectQueryBuilder) buildQuery() (*string, error) {
 		return nil, err
 	}
 
+	commonTableExpressions, err := q.queryBuilder.buildCommonTableExpressions()
+	if err != nil {
+		return nil, err
+	}
+
 	fields := strings.Join(q.fields, ", ")
 
-	query := fmt.Sprintf("SELECT %s FROM %s", fields, q.table)
+	query := fmt.Sprintf("%sSELECT %s FROM %s", commonTableExpressions, fields, q.table)
 
 	if q.leftJoinTable != "" {
 		query += fmt.Sprintf(" LEFT JOIN %s ON %s.%s = %s.%s", q.leftJoinTable, q.table, q.leftJoinOwnKey, q.leftJoinTable, q.leftJoinForeignKey)

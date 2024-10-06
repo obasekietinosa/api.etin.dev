@@ -148,3 +148,31 @@ func (q *QueryBuilder) buildReturnedColumns(fields []string) string {
 
 	return stmt
 }
+
+func (q *QueryBuilder) buildCommonTableExpressionParameters() []interface{} {
+	values := make([]interface{}, 0)
+
+	if len(q.commonTableExpressions) > 0 {
+		for _, cte := range q.commonTableExpressions {
+			values = append(values, cte.Builder.buildPreparedStatementValues()...)
+		}
+	}
+
+	return values
+}
+
+func (q *QueryBuilder) buildCommonTableExpressions() (string, error) {
+	stmt := ""
+
+	if len(q.commonTableExpressions) > 0 {
+		for _, cte := range q.commonTableExpressions {
+			query, err := cte.Builder.buildQuery()
+			if err != nil {
+				return "", err
+			}
+			stmt += fmt.Sprintf("WITH %s AS (%s) ", cte.Table, *query)
+		}
+	}
+
+	return stmt, nil
+}

@@ -15,13 +15,7 @@ type UpdateQueryBuilder struct {
 }
 
 func (q *UpdateQueryBuilder) buildPreparedStatementValues() []interface{} {
-	values := make([]interface{}, 0)
-
-	if len(q.queryBuilder.commonTableExpressions) > 0 {
-		for _, cte := range q.queryBuilder.commonTableExpressions {
-			values = append(values, cte.buildPreparedStatementValues()...)
-		}
-	}
+	values := q.queryBuilder.buildCommonTableExpressionParameters()
 
 	updateValues := q.queryBuilder.buildParameters(q.values)
 	conditionValues := q.queryBuilder.buildParameters(q.conditions)
