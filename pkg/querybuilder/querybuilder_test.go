@@ -116,3 +116,68 @@ func TestBuildReturnedColumns(t *testing.T) {
 		t.Errorf("Expected statement to be '%s', got '%s'", expectedStmt, stmt)
 	}
 }
+
+func Test_CommonTableExpression_WithUpdate_AndSelect(t *testing.T) {
+	qb := QueryBuilder{}
+	values := append(Clauses{}, Clause{ColumnName: "name", Value: "John"})
+
+	selectWithCte := qb.With(
+		qb.SetBaseTable("users").Update(values).WhereEqual("id", 3).Returning("*"), "updated_user").
+		Select(
+			"updated_user.updatedAt AS updatedAt",
+			"companies.name AS companyName",
+			"companies.icon AS companyIcon").From("updated_user").LeftJoin("companies", "company_id", "id")
+
+	query, err := selectWithCte.buildQuery()
+	if err != nil {
+		t.Fatalf("Unexpected error when building select query, got %s", err)
+	}
+
+	expected := "WITH updated_user AS (UPDATE users SET name = $1 WHERE id = $2 RETURNING *) SELECT updated_user.updatedAt AS updatedAt, companies.name AS companyName, companies.icon AS companyIcon FROM updated_user LEFT JOIN companies ON updated_user.company_id = companies.id"
+	if *query != expected {
+		t.Fatalf("Expected query was not generated\nexpected: %s \ngot: %s", expected, *query)
+	}
+}
+
+func Test_CommonTableExpression_WithInsert_AndSelect(t *testing.T) {
+	qb := QueryBuilder{}
+	values := append(Clauses{}, Clause{ColumnName: "name", Value: "John"})
+
+	selectWithCte := qb.With(
+		qb.SetBaseTable("users").Insert(values).Returning("*"), "inserted_user").
+		Select(
+			"inserted_user.updatedAt AS updatedAt",
+			"companies.name AS companyName",
+			"companies.icon AS companyIcon").From("updated_user").LeftJoin("companies", "company_id", "id")
+
+	query, err := selectWithCte.buildQuery()
+	if err != nil {
+		t.Fatalf("Unexpected error when building select query, got %s", err)
+	}
+
+	expected := "WITH inserted_user AS (INSERT INTO users (name) VALUES ($1) RETURNING *) SELECT inserted_user.updatedAt AS updatedAt, companies.name AS companyName, companies.icon AS companyIcon FROM updated_user LEFT JOIN companies ON updated_user.company_id = companies.id"
+	if *query != expected {
+		t.Fatalf("Expected query was not generated\nexpected: %s \ngot: %s", expected, *query)
+	}
+}
+
+func Test_CommonTableExpression_WithSelect_AndSelect(t *testing.T) {
+	qb := QueryBuilder{}
+
+	selectWithCte := qb.With(
+		qb.SetBaseTable("users").Select("id", "name").WhereEqual("age", 40), "selected_user").
+		Select(
+			"selected_user.updatedAt AS updatedAt",
+			"companies.name AS companyName",
+			"companies.icon AS companyIcon").From("selected_user").LeftJoin("companies", "company_id", "id")
+
+	query, err := selectWithCte.buildQuery()
+	if err != nil {
+		t.Fatalf("Unexpected error when building select query, got %s", err)
+	}
+
+	expected := "WITH selected_user AS (SELECT id, name FROM users WHERE age = $1) SELECT selected_user.updatedAt AS updatedAt, companies.name AS companyName, companies.icon AS companyIcon FROM selected_user LEFT JOIN companies ON selected_user.company_id = companies.id"
+	if *query != expected {
+		t.Fatalf("Expected query was not generated\nexpected: \n%s \ngot: \n%s", expected, *query)
+	}
+}

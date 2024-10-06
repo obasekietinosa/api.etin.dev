@@ -122,8 +122,9 @@ func TestSelectQueryBuilder_WhereEqual(t *testing.T) {
 		t.Fatalf("Unexpected error when building select query, got %s", err)
 	}
 
-	if *query != "SELECT id, name FROM users WHERE age = $1" {
-		t.Fatalf("Expected query was not generated got: %s", *query)
+	expected := "SELECT id, name FROM users WHERE age = $1"
+	if *query != expected {
+		t.Fatalf("Expected query was not generated\nexpected: %s \ngot: %s", expected, *query)
 	}
 }
 
@@ -145,7 +146,8 @@ func TestSelectQueryBuilder_WhereEqual_Null(t *testing.T) {
 		t.Fatalf("Unexpected error when building select query, got %s", err)
 	}
 
-	if *query != "SELECT id, name FROM users WHERE age = $1 AND deleted_at IS NULL AND category = $2" {
-		t.Fatalf("Expected query was not generated got: %s", *query)
+	expected := "SELECT id, name FROM users WHERE age = $1 AND deleted_at IS NULL AND category = $2"
+	if *query != expected {
+		t.Fatalf("Expected query was not generated\nexpected: %s got: %s", expected, *query)
 	}
 }

@@ -8,7 +8,7 @@ func TestInsertQueryBuilder_buildColumnNameStatement(t *testing.T) {
 	qb := QueryBuilder{}
 	values := append(Clauses{}, Clause{ColumnName: "name", Value: "John"}, Clause{ColumnName: "age", Value: 30})
 
-	insertQB := InsertQueryBuilder{queryBuilder: qb, values: values}
+	insertQB := InsertQueryBuilder{queryBuilder: &qb, values: values}
 
 	columnStmt := insertQB.buildColumnNameStatement()
 

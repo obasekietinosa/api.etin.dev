@@ -7,21 +7,15 @@ import (
 )
 
 type UpdateQueryBuilder struct {
-	queryBuilder QueryBuilder
+	queryBuilder *QueryBuilder
 	table        string
 	values       Clauses
 	conditions   Clauses
 	fields       []string
 }
 
-func (q UpdateQueryBuilder) buildPreparedStatementValues() []interface{} {
-	values := make([]interface{}, 0)
-
-	if len(q.queryBuilder.commonTableExpressions) > 0 {
-		for _, cte := range q.queryBuilder.commonTableExpressions {
-			values = append(values, cte.buildPreparedStatementValues()...)
-		}
-	}
+func (q *UpdateQueryBuilder) buildPreparedStatementValues() []interface{} {
+	values := q.queryBuilder.buildCommonTableExpressionParameters()
 
 	updateValues := q.queryBuilder.buildParameters(q.values)
 	conditionValues := q.queryBuilder.buildParameters(q.conditions)
@@ -31,17 +25,17 @@ func (q UpdateQueryBuilder) buildPreparedStatementValues() []interface{} {
 	return values
 }
 
-func (q UpdateQueryBuilder) WhereEqual(column string, value interface{}) UpdateQueryBuilder {
+func (q *UpdateQueryBuilder) WhereEqual(column string, value interface{}) *UpdateQueryBuilder {
 	q.queryBuilder.addCondition(column, value, "=", &q.conditions)
 	return q
 }
 
-func (q UpdateQueryBuilder) Returning(fields ...string) UpdateQueryBuilder {
+func (q *UpdateQueryBuilder) Returning(fields ...string) *UpdateQueryBuilder {
 	q.fields = fields
 	return q
 }
 
-func (q UpdateQueryBuilder) buildQuery() (*string, error) {
+func (q *UpdateQueryBuilder) buildQuery() (*string, error) {
 	if len(q.values) == 0 || q.table == "" {
 		err := errors.New("Incorrectly formatted query. Ensure fields and base tables are set")
 		return nil, err

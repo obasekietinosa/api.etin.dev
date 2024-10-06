@@ -7,12 +7,12 @@ import (
 )
 
 type DeleteQueryBuilder struct {
-	queryBuilder QueryBuilder
+	queryBuilder *QueryBuilder
 	table        string
 	conditions   Clauses
 }
 
-func (q DeleteQueryBuilder) buildQuery() (*string, error) {
+func (q *DeleteQueryBuilder) buildQuery() (*string, error) {
 	if len(q.conditions) == 0 {
 		err := errors.New("Incorrectly formatted query. Ensure fields are set")
 		return nil, err
@@ -29,12 +29,12 @@ func (q DeleteQueryBuilder) buildQuery() (*string, error) {
 	return &query, nil
 }
 
-func (q DeleteQueryBuilder) WhereEqual(column string, value interface{}) DeleteQueryBuilder {
+func (q *DeleteQueryBuilder) WhereEqual(column string, value interface{}) *DeleteQueryBuilder {
 	q.queryBuilder.addCondition(column, value, "=", &q.conditions)
 	return q
 }
 
-func (q DeleteQueryBuilder) Exec() (sql.Result, error) {
+func (q *DeleteQueryBuilder) Exec() (sql.Result, error) {
 	query, err := q.buildQuery()
 	if err != nil {
 		return nil, err
