@@ -51,12 +51,13 @@ func (q *QueryBuilder) Delete() *DeleteQueryBuilder {
 }
 
 func (q *QueryBuilder) With(query CommonQueryBuilder, name string) *QueryBuilder {
-	if q.commonTableExpressions == nil {
-		q.commonTableExpressions = make([]CommonQueryBuilder, 0)
+	clonedQueryBuilder := *q
+	if clonedQueryBuilder.commonTableExpressions == nil {
+		clonedQueryBuilder.commonTableExpressions = make([]CommonQuery, 0)
 	}
 
-	q.commonTableExpressions = append(q.commonTableExpressions, query)
-	return q
+	clonedQueryBuilder.commonTableExpressions = append(q.commonTableExpressions, CommonQuery{Builder: query, Table: name})
+	return &clonedQueryBuilder
 }
 
 func (q *QueryBuilder) addCondition(column string, value interface{}, comparer string, conditions *Clauses) {
