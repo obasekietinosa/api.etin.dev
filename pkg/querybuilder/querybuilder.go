@@ -12,11 +12,16 @@ type Clause struct {
 }
 type Clauses []Clause
 
+type CommonQuery struct {
+	Builder CommonQueryBuilder
+	Table   string
+}
+
 type QueryBuilder struct {
 	DB                     *sql.DB
 	table                  string
 	preparedVariableOffset int
-	commonTableExpressions []CommonQueryBuilder
+	commonTableExpressions []CommonQuery
 }
 
 type CommonQueryBuilder interface {
