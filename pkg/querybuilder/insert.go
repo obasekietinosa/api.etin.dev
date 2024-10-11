@@ -7,13 +7,20 @@ import (
 )
 
 type InsertQueryBuilder struct {
-	queryBuilder QueryBuilder
+	queryBuilder *QueryBuilder
 	table        string
 	values       Clauses
 	fields       []string
 }
 
-func (q InsertQueryBuilder) buildColumnNameStatement() string {
+func (q *InsertQueryBuilder) buildPreparedStatementValues() []interface{} {
+	values := q.queryBuilder.buildCommonTableExpressionParameters()
+	values = append(values, q.queryBuilder.buildParameters(q.values))
+
+	return values
+}
+
+func (q *InsertQueryBuilder) buildColumnNameStatement() string {
 	stmt := ""
 
 	if len(q.values) != 0 {
@@ -28,7 +35,7 @@ func (q InsertQueryBuilder) buildColumnNameStatement() string {
 	return stmt
 }
 
-func (q InsertQueryBuilder) buildQuery() (*string, error) {
+func (q *InsertQueryBuilder) buildQuery() (*string, error) {
 	if len(q.values) == 0 {
 		err := errors.New("Incorrectly formatted query. Ensure fields are set")
 		return nil, err
@@ -49,36 +56,36 @@ func (q InsertQueryBuilder) buildQuery() (*string, error) {
 	return &query, nil
 }
 
-func (q InsertQueryBuilder) Returning(fields ...string) InsertQueryBuilder {
+func (q *InsertQueryBuilder) Returning(fields ...string) *InsertQueryBuilder {
 	q.fields = fields
 	return q
 }
 
-func (q InsertQueryBuilder) Query() (*sql.Rows, error) {
+func (q *InsertQueryBuilder) Query() (*sql.Rows, error) {
 	query, err := q.buildQuery()
 	if err != nil {
 		return nil, err
 	}
-	values := q.queryBuilder.buildParameters(q.values)
+	values := q.buildPreparedStatementValues()
 	return q.queryBuilder.DB.Query(*query, values...)
 }
 
-func (q InsertQueryBuilder) QueryRow() (*sql.Row, error) {
+func (q *InsertQueryBuilder) QueryRow() (*sql.Row, error) {
 	query, err := q.buildQuery()
 	if err != nil {
 		return nil, err
 	}
 
-	values := q.queryBuilder.buildParameters(q.values)
+	values := q.buildPreparedStatementValues()
 	return q.queryBuilder.DB.QueryRow(*query, values...), nil
 }
 
-func (q InsertQueryBuilder) Exec() (sql.Result, error) {
+func (q *InsertQueryBuilder) Exec() (sql.Result, error) {
 	query, err := q.buildQuery()
 	if err != nil {
 		return nil, err
 	}
 
-	values := q.queryBuilder.buildParameters(q.values)
+	values := q.buildPreparedStatementValues()
 	return q.queryBuilder.DB.Exec(*query, values...)
 }

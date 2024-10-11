@@ -12,11 +12,16 @@ type Clause struct {
 }
 type Clauses []Clause
 
+type CommonQuery struct {
+	Builder CommonQueryBuilder
+	Table   string
+}
+
 type QueryBuilder struct {
 	DB                     *sql.DB
 	table                  string
 	preparedVariableOffset int
-	commonTableExpressions []CommonQueryBuilder
+	commonTableExpressions []CommonQuery
 }
 
 type CommonQueryBuilder interface {
@@ -29,29 +34,30 @@ func (q *QueryBuilder) SetBaseTable(table string) *QueryBuilder {
 	return q
 }
 
-func (q QueryBuilder) Select(fields ...string) SelectQueryBuilder {
-	return SelectQueryBuilder{queryBuilder: q, table: q.table, fields: fields}
+func (q *QueryBuilder) Select(fields ...string) *SelectQueryBuilder {
+	return &SelectQueryBuilder{queryBuilder: q, table: q.table, fields: fields}
 }
 
-func (q QueryBuilder) Update(values Clauses) UpdateQueryBuilder {
-	return UpdateQueryBuilder{queryBuilder: q, table: q.table, values: values}
+func (q *QueryBuilder) Update(values Clauses) *UpdateQueryBuilder {
+	return &UpdateQueryBuilder{queryBuilder: q, table: q.table, values: values}
 }
 
-func (q QueryBuilder) Insert(values Clauses) InsertQueryBuilder {
-	return InsertQueryBuilder{queryBuilder: q, table: q.table, values: values}
+func (q *QueryBuilder) Insert(values Clauses) *InsertQueryBuilder {
+	return &InsertQueryBuilder{queryBuilder: q, table: q.table, values: values}
 }
 
-func (q QueryBuilder) Delete() DeleteQueryBuilder {
-	return DeleteQueryBuilder{queryBuilder: q, table: q.table}
+func (q *QueryBuilder) Delete() *DeleteQueryBuilder {
+	return &DeleteQueryBuilder{queryBuilder: q, table: q.table}
 }
 
-func (q QueryBuilder) With(query CommonQueryBuilder, name string) QueryBuilder {
-	if q.commonTableExpressions == nil {
-		q.commonTableExpressions = make([]CommonQueryBuilder, 0)
+func (q *QueryBuilder) With(query CommonQueryBuilder, name string) *QueryBuilder {
+	clonedQueryBuilder := *q
+	if clonedQueryBuilder.commonTableExpressions == nil {
+		clonedQueryBuilder.commonTableExpressions = make([]CommonQuery, 0)
 	}
 
-	q.commonTableExpressions = append(q.commonTableExpressions, query)
-	return q
+	clonedQueryBuilder.commonTableExpressions = append(q.commonTableExpressions, CommonQuery{Builder: query, Table: name})
+	return &clonedQueryBuilder
 }
 
 func (q *QueryBuilder) addCondition(column string, value interface{}, comparer string, conditions *Clauses) {
@@ -147,4 +153,32 @@ func (q *QueryBuilder) buildReturnedColumns(fields []string) string {
 	}
 
 	return stmt
+}
+
+func (q *QueryBuilder) buildCommonTableExpressionParameters() []interface{} {
+	values := make([]interface{}, 0)
+
+	if len(q.commonTableExpressions) > 0 {
+		for _, cte := range q.commonTableExpressions {
+			values = append(values, cte.Builder.buildPreparedStatementValues()...)
+		}
+	}
+
+	return values
+}
+
+func (q *QueryBuilder) buildCommonTableExpressions() (string, error) {
+	stmt := ""
+
+	if len(q.commonTableExpressions) > 0 {
+		for _, cte := range q.commonTableExpressions {
+			query, err := cte.Builder.buildQuery()
+			if err != nil {
+				return "", err
+			}
+			stmt += fmt.Sprintf("WITH %s AS (%s) ", cte.Table, *query)
+		}
+	}
+
+	return stmt, nil
 }

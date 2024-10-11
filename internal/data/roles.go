@@ -131,6 +131,25 @@ func (r RoleModel) Update(role *Role) error {
 		FROM updated_role
 		LEFT JOIN companies ON updated_role.companyId = companies.id;
 	`
+	values := querybuilder.Clauses{
+		querybuilder.Clause{ColumnName: "startDate", Value: role.StartDate},
+		querybuilder.Clause{ColumnName: "endDate", Value: role.EndDate},
+		querybuilder.Clause{ColumnName: "title", Value: role.Title},
+		querybuilder.Clause{ColumnName: "subtitle", Value: role.Subtitle},
+		querybuilder.Clause{ColumnName: "slug", Value: role.Slug},
+		querybuilder.Clause{ColumnName: "description", Value: role.Description},
+		querybuilder.Clause{ColumnName: "skills", Value: role.Skills},
+		querybuilder.Clause{ColumnName: "companyId", Value: role.CompanyId},
+		querybuilder.Clause{ColumnName: "updatedAt", Value: role.UpdatedAt},
+	}
+
+	r.Query.With(
+		r.Query.SetBaseTable("roles").Update(values).WhereEqual("id", role.ID).Returning("*"), "updated_role").
+		Select(
+			"updated_role.updatedAt AS updatedAt",
+			"companies.id AS companyId",
+			"companies.name AS company",
+			"companies.icon AS companyIcon").From("updated_role").LeftJoin("companies", "id", "companyId").QueryRow()
 
 	args := []interface{}{role.StartDate, role.EndDate, role.Title, role.Subtitle, role.Slug, role.Description, pq.Array(role.Skills), role.CompanyId, role.ID}
 	return r.DB.QueryRow(query, args...).Scan(&role.UpdatedAt, &role.CompanyId, &role.Company, &role.CompanyIcon)
