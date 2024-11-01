@@ -33,31 +33,31 @@ type RoleModel struct {
 }
 
 func (r RoleModel) Insert(role *Role) error {
-	query := `
-		WITH inserted_role as (
-			INSERT INTO roles (
-				startDate, 
-				endDate,
-				title,
-				subtitle,
-				companyId,
-				slug,
-				description,
-				skills
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-			RETURNING *
-		) SELECT 
-				inserted_role.id as id, 
-				inserted_role.createdAt as createdAt, 
-				inserted_role.updatedAt as updatedAt, 
-				companies.name as company,
-				companies.icon as companyIcon 
-			FROM inserted_role
-			LEFT JOIN companies ON inserted_role.companyId = companies.id;
-	`
 
-	args := []interface{}{role.StartDate, role.EndDate, role.Title, role.Subtitle, role.CompanyId, role.Slug, role.Description, pq.Array(role.Skills)}
-	return r.DB.QueryRow(query, args...).Scan(&role.ID, &role.CreatedAt, &role.UpdatedAt, &role.Company, &role.CompanyIcon)
+	values := querybuilder.Clauses{
+		querybuilder.Clause{ColumnName: "startDate", Value: role.StartDate},
+		querybuilder.Clause{ColumnName: "endDate", Value: role.EndDate},
+		querybuilder.Clause{ColumnName: "title", Value: role.Title},
+		querybuilder.Clause{ColumnName: "subtitle", Value: role.Subtitle},
+		querybuilder.Clause{ColumnName: "slug", Value: role.Slug},
+		querybuilder.Clause{ColumnName: "description", Value: role.Description},
+		querybuilder.Clause{ColumnName: "skills", Value: pq.Array(role.Skills)},
+		querybuilder.Clause{ColumnName: "companyId", Value: role.CompanyId},
+		querybuilder.Clause{ColumnName: "updatedAt", Value: role.UpdatedAt},
+	}
+	row, err := r.Query.With(r.Query.SetBaseTable("roles").Insert(values).Returning("*"), "inserted_role").Select(
+		"inserted_role.id as id",
+		"inserted_role.createdAt as createdAt",
+		"inserted_role.updatedAt as updatedAt",
+		"companies.name as company",
+		"companies.icon as companyIcon",
+	).From("inserted_role").LeftJoin("companies", "id", "companyId").QueryRow()
+
+	if err != nil {
+		return err
+	}
+
+	return row.Scan(&role.ID, &role.CreatedAt, &role.UpdatedAt, &role.Company, &role.CompanyIcon)
 }
 
 func (r RoleModel) Get(roleId int64) (*Role, error) {
@@ -107,30 +107,6 @@ func (r RoleModel) Get(roleId int64) (*Role, error) {
 }
 
 func (r RoleModel) Update(role *Role) error {
-	query := `
-		WITH updated_role as (
-			UPDATE roles
-			SET 
-				startDate = $1,
-				endDate = $2,
-				title = $3,
-				subtitle = $4,
-				slug = $5,
-				description = $6,
-				skills = $7,
-				companyId = $8,
-				updatedAt = NOW()
-			WHERE id = $9
-			RETURNING *
-		) 
-		SELECT 
-			updated_role.updatedAt AS updatedAt,
-			companies.id as companyId,
-			companies.name as company,
-			companies.icon as companyIcon
-		FROM updated_role
-		LEFT JOIN companies ON updated_role.companyId = companies.id;
-	`
 	values := querybuilder.Clauses{
 		querybuilder.Clause{ColumnName: "startDate", Value: role.StartDate},
 		querybuilder.Clause{ColumnName: "endDate", Value: role.EndDate},
@@ -138,12 +114,12 @@ func (r RoleModel) Update(role *Role) error {
 		querybuilder.Clause{ColumnName: "subtitle", Value: role.Subtitle},
 		querybuilder.Clause{ColumnName: "slug", Value: role.Slug},
 		querybuilder.Clause{ColumnName: "description", Value: role.Description},
-		querybuilder.Clause{ColumnName: "skills", Value: role.Skills},
+		querybuilder.Clause{ColumnName: "skills", Value: pq.Array(role.Skills)},
 		querybuilder.Clause{ColumnName: "companyId", Value: role.CompanyId},
 		querybuilder.Clause{ColumnName: "updatedAt", Value: role.UpdatedAt},
 	}
 
-	r.Query.With(
+	row, err := r.Query.With(
 		r.Query.SetBaseTable("roles").Update(values).WhereEqual("id", role.ID).Returning("*"), "updated_role").
 		Select(
 			"updated_role.updatedAt AS updatedAt",
@@ -151,8 +127,11 @@ func (r RoleModel) Update(role *Role) error {
 			"companies.name AS company",
 			"companies.icon AS companyIcon").From("updated_role").LeftJoin("companies", "id", "companyId").QueryRow()
 
-	args := []interface{}{role.StartDate, role.EndDate, role.Title, role.Subtitle, role.Slug, role.Description, pq.Array(role.Skills), role.CompanyId, role.ID}
-	return r.DB.QueryRow(query, args...).Scan(&role.UpdatedAt, &role.CompanyId, &role.Company, &role.CompanyIcon)
+	if err != nil {
+		return err
+	}
+
+	return row.Scan(&role.UpdatedAt, &role.CompanyId, &role.Company, &role.CompanyIcon)
 }
 
 func (r RoleModel) Delete(roleId int64) error {
@@ -160,13 +139,12 @@ func (r RoleModel) Delete(roleId int64) error {
 		return errors.New("No record found")
 	}
 
-	query := `
-		UPDATE roles
-		SET updatedAt = NOW(), deletedAt = NOW()
-		WHERE id = $1;
-	`
+	values := querybuilder.Clauses{
+		querybuilder.Clause{ColumnName: "updatedAt", Value: time.Now()},
+		querybuilder.Clause{ColumnName: "deletedAt", Value: time.Now()},
+	}
 
-	results, err := r.DB.Exec(query, roleId)
+	results, err := r.Query.SetBaseTable("roles").Update(values).WhereEqual("id", roleId).Exec()
 	if err != nil {
 		return err
 	}
