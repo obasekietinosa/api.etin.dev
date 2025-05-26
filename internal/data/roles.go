@@ -168,7 +168,7 @@ func (r RoleModel) GetAll() ([]*Role, error) {
 		"roles.description AS description", "roles.skills AS skills", "roles.companyId AS companyId",
 		"companies.name AS company", "companies.icon AS companyIcon",
 	).
-		LeftJoin("companies", "id", "companyId").
+		LeftJoin("companies", "companyId", "id").
 		OrderBy("startDate", "desc").
 		Query()
 

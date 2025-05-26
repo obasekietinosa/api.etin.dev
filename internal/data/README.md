@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS roles (
   endDate timestamp(0) with time zone,
   title text NOT NULL,
   subtitle text,
-  companyId bigint NOcT NULL,
+  companyId bigint NOT NULL,
   FOREIGN KEY (companyId) REFERENCES companies(id),
   slug varchar(255),
   description text,
@@ -106,7 +106,7 @@ CREATE TABLE IF NOT EXISTS projects (
   startDate timestamp(0) with time zone NOT NULL,
   endDate timestamp(0) with time zone,
   title text NOT NULL,
-  description text,
+  description text
 );
 
 CREATE TABLE IF NOT EXISTS tags (
@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS tags (
   name text NOT NULL,
   slug varchar(255),
   icon varchar(1),
-  theme varchar(255),
+  theme varchar(255)
 );
 
 CREATE TABLE IF NOT EXISTS notes (
@@ -127,23 +127,23 @@ CREATE TABLE IF NOT EXISTS notes (
   deletedAt timestamp(0) with time zone,
   title text NOT NULL,
   subtitle text,
-  body text,
+  body text
 );
 
-CREATE TYPE item_type AS ENUM ('notes', 'roles', 'projects')
+CREATE TYPE item_type AS ENUM ('notes', 'roles', 'projects');
 
 CREATE TABLE IF NOT EXISTS tagged_items (
   id bigserial PRIMARY KEY,
   tagId bigint NOT NULL,
   itemId bigint NOT NULL,
   itemType item_type NOT NULL,
-  FOREIGN KEY (tagId) REFERENCES tags(id),
+  FOREIGN KEY (tagId) REFERENCES tags(id)
 );
 
 CREATE TABLE IF NOT EXISTS item_notes (
   id bigserial PRIMARY KEY,
   noteId bigint NOT NULL,
   itemId bigint NOT NULL,
-  itemType item_type NOT NULL,
+  itemType item_type NOT NULL
 );
 ```
