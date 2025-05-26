@@ -47,6 +47,12 @@ func (app *application) getCreateRolesHandler(w http.ResponseWriter, r *http.Req
 		}
 	case http.MethodPost:
 		{
+
+			if !app.isRequestAuthenticated(r) {
+				app.writeError(w, http.StatusForbidden)
+				return
+			}
+
 			var input struct {
 				StartDate   time.Time `json:"startDate"`
 				EndDate     time.Time `json:"endDate"`
@@ -126,6 +132,11 @@ func (app *application) getRole(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) updateRole(w http.ResponseWriter, r *http.Request) {
+	if !app.isRequestAuthenticated(r) {
+		app.writeError(w, http.StatusForbidden)
+		return
+	}
+
 	id, err := strconv.ParseInt(r.URL.Path[len("/v1/roles/"):], 10, 64)
 	if err != nil {
 		app.writeError(w, http.StatusBadRequest)
@@ -195,6 +206,11 @@ func (app *application) updateRole(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) deleteRole(w http.ResponseWriter, r *http.Request) {
+	if !app.isRequestAuthenticated(r) {
+		app.writeError(w, http.StatusForbidden)
+		return
+	}
+
 	id, err := strconv.ParseInt(r.URL.Path[len("/v1/roles/"):], 10, 64)
 	if err != nil {
 		app.writeError(w, http.StatusBadRequest)
@@ -226,6 +242,11 @@ func (app *application) getCreateCompaniesHandler(w http.ResponseWriter, r *http
 		}
 	case http.MethodPost:
 		{
+			if !app.isRequestAuthenticated(r) {
+				app.writeError(w, http.StatusForbidden)
+				return
+			}
+
 			var input struct {
 				Name        string `json:"name"`
 				Icon        string `json:"icon"`
@@ -278,6 +299,11 @@ func (app *application) getUpdateDeleteCompaniesHandler(w http.ResponseWriter, r
 		}
 	case http.MethodPut:
 		{
+			if !app.isRequestAuthenticated(r) {
+				app.writeError(w, http.StatusForbidden)
+				return
+			}
+
 			company, err := app.models.Companies.Get(id)
 			if err != nil {
 				app.logger.Printf("Error getting company with ID: %d, error: %s", id, err)
@@ -321,6 +347,11 @@ func (app *application) getUpdateDeleteCompaniesHandler(w http.ResponseWriter, r
 		}
 	case http.MethodDelete:
 		{
+			if !app.isRequestAuthenticated(r) {
+				app.writeError(w, http.StatusForbidden)
+				return
+			}
+
 			company, err := app.models.Companies.Get(id)
 			if err != nil {
 				app.logger.Printf("Error getting company with ID: %d, error: %s", id, err)

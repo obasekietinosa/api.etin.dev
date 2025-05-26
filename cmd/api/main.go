@@ -16,9 +16,10 @@ import (
 const version = "1.0.0"
 
 type config struct {
-	port int
-	env  string
-	dsn  string
+	port    int
+	env     string
+	dsn     string
+	authKey string
 }
 
 type application struct {
@@ -33,9 +34,14 @@ func main() {
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.env, "env", "dev", "Environment (dev|stage|prod)")
 	flag.StringVar(&cfg.dsn, "dsn", os.Getenv("WEBSITE_DB_DSN"), "PostgreSQL DSN")
+	flag.StringVar(&cfg.authKey, "key", os.Getenv("WEBSITE_AUTH_KEY"), "Admin auth key")
 	flag.Parse()
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+
+	if cfg.authKey == "" {
+		logger.Fatal("No auth key provided")
+	}
 
 	db, err := openDB(cfg.dsn)
 	if err != nil {
