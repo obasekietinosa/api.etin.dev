@@ -1,1 +1,6 @@
 cmd/api/build/*
+# macOS system files
+.DS_Store
+
+# JetBrains IDE config
+.idea/
