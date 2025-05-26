@@ -15,7 +15,7 @@ type InsertQueryBuilder struct {
 
 func (q *InsertQueryBuilder) buildPreparedStatementValues() []interface{} {
 	values := q.queryBuilder.buildCommonTableExpressionParameters()
-	values = append(values, q.queryBuilder.buildParameters(q.values))
+	values = append(values, q.queryBuilder.buildParameters(q.values)...)
 
 	return values
 }
