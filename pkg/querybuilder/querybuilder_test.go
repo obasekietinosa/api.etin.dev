@@ -181,3 +181,43 @@ func Test_CommonTableExpression_WithSelect_AndSelect(t *testing.T) {
 		t.Fatalf("Expected query was not generated\nexpected: \n%s \ngot: \n%s", expected, *query)
 	}
 }
+
+func TestPreparedVariableOffset_IsResetPerQuery(t *testing.T) {
+	qb := QueryBuilder{}
+	values := Clauses{
+		{ColumnName: "name", Value: "Alice"},
+	}
+
+	// First query
+	insertQuery1 := qb.SetBaseTable("users").Insert(values).Returning("id")
+	query1, err := insertQuery1.buildQuery()
+	if err != nil {
+		t.Fatalf("Unexpected error building first insert query: %s", err)
+	}
+	expected1 := "INSERT INTO users (name) VALUES ($1) RETURNING id"
+	if *query1 != expected1 {
+		t.Errorf("First query not as expected. Expected: %s, Got: %s", expected1, *query1)
+	}
+
+	// Second query
+	updateQuery := qb.SetBaseTable("users").Update(values).WhereEqual("id", 3).Returning("id")
+	query2, err := updateQuery.buildQuery()
+	if err != nil {
+		t.Fatalf("Unexpected error building update query: %s", err)
+	}
+	expected2 := "UPDATE users SET name = $1 WHERE id = $2 RETURNING id"
+	if *query2 != expected2 {
+		t.Errorf("Second query not as expected. Expected: %s, Got: %s", expected2, *query2)
+	}
+
+	// Third query
+	insertQuery2 := qb.SetBaseTable("users").Insert(values).Returning("id")
+	query3, err := insertQuery2.buildQuery()
+	if err != nil {
+		t.Fatalf("Unexpected error building second insert query: %s", err)
+	}
+	expected3 := "INSERT INTO users (name) VALUES ($1) RETURNING id"
+	if *query3 != expected3 {
+		t.Errorf("Third query not as expected. Expected: %s, Got: %s", expected3, *query3)
+	}
+}

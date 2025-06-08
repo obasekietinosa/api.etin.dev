@@ -34,20 +34,33 @@ func (q *QueryBuilder) SetBaseTable(table string) *QueryBuilder {
 	return q
 }
 
+func (q *QueryBuilder) clone() *QueryBuilder {
+	return &QueryBuilder{
+		DB:                     q.DB,
+		table:                  q.table,
+		commonTableExpressions: q.commonTableExpressions,
+		preparedVariableOffset: 0,
+	}
+}
+
 func (q *QueryBuilder) Select(fields ...string) *SelectQueryBuilder {
-	return &SelectQueryBuilder{queryBuilder: q, table: q.table, fields: fields}
+	cloned := q.clone()
+	return &SelectQueryBuilder{queryBuilder: cloned, table: cloned.table, fields: fields}
 }
 
 func (q *QueryBuilder) Update(values Clauses) *UpdateQueryBuilder {
-	return &UpdateQueryBuilder{queryBuilder: q, table: q.table, values: values}
+	cloned := q.clone()
+	return &UpdateQueryBuilder{queryBuilder: cloned, table: cloned.table, values: values}
 }
 
 func (q *QueryBuilder) Insert(values Clauses) *InsertQueryBuilder {
-	return &InsertQueryBuilder{queryBuilder: q, table: q.table, values: values}
+	cloned := q.clone()
+	return &InsertQueryBuilder{queryBuilder: cloned, table: cloned.table, values: values}
 }
 
 func (q *QueryBuilder) Delete() *DeleteQueryBuilder {
-	return &DeleteQueryBuilder{queryBuilder: q, table: q.table}
+	cloned := q.clone()
+	return &DeleteQueryBuilder{queryBuilder: cloned, table: cloned.table}
 }
 
 func (q *QueryBuilder) With(query CommonQueryBuilder, name string) *QueryBuilder {
