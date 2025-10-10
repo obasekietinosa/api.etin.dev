@@ -13,5 +13,8 @@ func (app *application) routes() *http.ServeMux {
 	mux.HandleFunc("/v1/companies", app.getCreateCompaniesHandler)
 	mux.HandleFunc("/v1/companies/", app.getUpdateDeleteCompaniesHandler)
 
+	mux.HandleFunc("/v1/notes", app.getCreateNotesHandler)
+	mux.HandleFunc("/v1/notes/", app.getUpdateDeleteNotesHandler)
+
 	return mux
 }
