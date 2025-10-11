@@ -16,5 +16,8 @@ func (app *application) routes() *http.ServeMux {
 	mux.HandleFunc("/v1/notes", app.getCreateNotesHandler)
 	mux.HandleFunc("/v1/notes/", app.getUpdateDeleteNotesHandler)
 
+	mux.HandleFunc("/v1/projects", app.getCreateProjectsHandler)
+	mux.HandleFunc("/v1/projects/", app.getUpdateDeleteProjectsHandler)
+
 	return mux
 }
