@@ -11,6 +11,8 @@ type Models struct {
 	Companies CompanyModel
 	Notes     NoteModel
 	Projects  ProjectModel
+	Tags      TagModel
+	TagItems  TagItemModel
 }
 
 func NewModels(db *sql.DB) Models {
@@ -19,6 +21,8 @@ func NewModels(db *sql.DB) Models {
 		Companies: CompanyModel{DB: db, Query: &querybuilder.QueryBuilder{DB: db}},
 		Notes:     NoteModel{DB: db, Query: &querybuilder.QueryBuilder{DB: db}},
 		Projects:  ProjectModel{DB: db, Query: &querybuilder.QueryBuilder{DB: db}},
+		Tags:      TagModel{DB: db, Query: &querybuilder.QueryBuilder{DB: db}},
+		TagItems:  TagItemModel{DB: db, Query: &querybuilder.QueryBuilder{DB: db}},
 	}
 
 }
