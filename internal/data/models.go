@@ -9,12 +9,14 @@ import (
 type Models struct {
 	Roles     RoleModel
 	Companies CompanyModel
+	Notes     NoteModel
 }
 
 func NewModels(db *sql.DB) Models {
 	return Models{
 		Roles:     RoleModel{DB: db, Query: &querybuilder.QueryBuilder{DB: db}},
 		Companies: CompanyModel{DB: db, Query: &querybuilder.QueryBuilder{DB: db}},
+		Notes:     NoteModel{DB: db, Query: &querybuilder.QueryBuilder{DB: db}},
 	}
 
 }

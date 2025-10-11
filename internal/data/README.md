@@ -125,6 +125,7 @@ CREATE TABLE IF NOT EXISTS notes (
   createdAt  timestamp(0) with time zone NOT NULL DEFAULT NOW(),
   updatedAt timestamp(0) with time zone NOT NULL DEFAULT NOW(),
   deletedAt timestamp(0) with time zone,
+  publishedAt timestamp(0) with time zone,
   title text NOT NULL,
   subtitle text,
   body text
@@ -145,5 +146,23 @@ CREATE TABLE IF NOT EXISTS item_notes (
   noteId bigint NOT NULL,
   itemId bigint NOT NULL,
   itemType item_type NOT NULL
+);
+
+```
+
+## Notes table migration
+
+To create the standalone table that powers the notes feature, apply the following SQL:
+
+```sql
+CREATE TABLE IF NOT EXISTS notes (
+  id bigserial PRIMARY KEY,
+  createdAt  timestamp(0) with time zone NOT NULL DEFAULT NOW(),
+  updatedAt timestamp(0) with time zone NOT NULL DEFAULT NOW(),
+  deletedAt timestamp(0) with time zone,
+  publishedAt timestamp(0) with time zone,
+  title text NOT NULL,
+  subtitle text,
+  body text
 );
 ```
