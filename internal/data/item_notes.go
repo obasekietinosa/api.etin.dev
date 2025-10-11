@@ -147,3 +147,115 @@ func (i ItemNoteModel) GetNotesForItem(itemType ItemType, itemID int64) ([]*Note
 
 	return notes, nil
 }
+
+func (i ItemNoteModel) Get(id int64) (*ItemNote, error) {
+	if id < 1 {
+		return nil, errors.New("record not found")
+	}
+
+	row, err := i.Query.SetBaseTable("item_notes").Select(
+		"id",
+		"noteId",
+		"itemId",
+		"itemType",
+	).WhereEqual("id", id).QueryRow()
+	if err != nil {
+		return nil, err
+	}
+
+	var itemNote ItemNote
+	var itemType string
+
+	if err := row.Scan(
+		&itemNote.ID,
+		&itemNote.NoteID,
+		&itemNote.ItemID,
+		&itemType,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("record not found")
+		}
+		return nil, err
+	}
+
+	itemNote.ItemType = ItemType(itemType)
+
+	return &itemNote, nil
+}
+
+func (i ItemNoteModel) Update(itemNote *ItemNote) error {
+	if err := validateItemType(itemNote.ItemType); err != nil {
+		return err
+	}
+
+	values := querybuilder.Clauses{
+		{ColumnName: "noteId", Value: itemNote.NoteID},
+		{ColumnName: "itemId", Value: itemNote.ItemID},
+		{ColumnName: "itemType", Value: string(itemNote.ItemType)},
+	}
+
+	row, err := i.Query.SetBaseTable("item_notes").Update(values).
+		WhereEqual("id", itemNote.ID).
+		Returning("id", "noteId", "itemId", "itemType").
+		QueryRow()
+	if err != nil {
+		return err
+	}
+
+	var itemType string
+
+	if err := row.Scan(
+		&itemNote.ID,
+		&itemNote.NoteID,
+		&itemNote.ItemID,
+		&itemType,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errors.New("record not found")
+		}
+		return err
+	}
+
+	itemNote.ItemType = ItemType(itemType)
+
+	return nil
+}
+
+func (i ItemNoteModel) GetAll() ([]*ItemNote, error) {
+	rows, err := i.Query.SetBaseTable("item_notes").Select(
+		"id",
+		"noteId",
+		"itemId",
+		"itemType",
+	).Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	itemNotes := make([]*ItemNote, 0)
+
+	for rows.Next() {
+		itemNote := &ItemNote{}
+		var itemType string
+
+		if err := rows.Scan(
+			&itemNote.ID,
+			&itemNote.NoteID,
+			&itemNote.ItemID,
+			&itemType,
+		); err != nil {
+			return nil, err
+		}
+
+		itemNote.ItemType = ItemType(itemType)
+
+		itemNotes = append(itemNotes, itemNote)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return itemNotes, nil
+}
