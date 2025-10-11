@@ -7,6 +7,8 @@ import (
 	"api.etin.dev/pkg/querybuilder"
 )
 
+var ErrInvalidItemType = errors.New("invalid item type")
+
 type ItemType string
 
 const (
@@ -168,6 +170,6 @@ func validateItemType(itemType ItemType) error {
 	case ItemTypeNotes, ItemTypeRoles, ItemTypeProjects:
 		return nil
 	default:
-		return errors.New("invalid item type")
+		return ErrInvalidItemType
 	}
 }
