@@ -12,6 +12,8 @@ func (app *application) enableCORS(next http.Handler) http.Handler {
 		w.Header().Add("Vary", "Access-Control-Request-Method")
 		w.Header().Add("Vary", "Access-Control-Request-Headers")
 
+		app.logger.Printf("CORS origin: %s", r.Header.Get("Origin"))
+
 		if origin := r.Header.Get("Origin"); origin != "" {
 			if allowedOrigin, ok := app.getAllowedOrigin(origin); ok {
 				w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
