@@ -56,6 +56,10 @@ func main() {
 		cfg.cors.trustedOrigins = []string{"https://admin.etin.dev", "https://etin.dev"}
 	}
 
+	for i, origin := range cfg.cors.trustedOrigins {
+		cfg.cors.trustedOrigins[i] = normalizeOrigin(origin)
+	}
+
 	if cfg.adminEmail == "" || cfg.adminPassword == "" {
 		logger.Fatal("Admin credentials must be provided")
 	}

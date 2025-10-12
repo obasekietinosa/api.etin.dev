@@ -1,6 +1,10 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+	"net/url"
+	"strings"
+)
 
 func (app *application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -34,14 +38,43 @@ func (app *application) enableCORS(next http.Handler) http.Handler {
 }
 
 func (app *application) getAllowedOrigin(origin string) (string, bool) {
+	normalizedOrigin := normalizeOrigin(origin)
+
 	for _, trustedOrigin := range app.config.cors.trustedOrigins {
 		if trustedOrigin == "*" {
 			return "*", true
 		}
-		if trustedOrigin == origin {
+		if trustedOrigin == normalizedOrigin {
 			return origin, true
 		}
 	}
 
 	return "", false
+}
+
+func normalizeOrigin(origin string) string {
+	trimmed := strings.TrimSpace(origin)
+	trimmed = strings.TrimRight(trimmed, "/")
+	if trimmed == "" {
+		return ""
+	}
+
+	parsed, err := url.Parse(trimmed)
+	if err != nil {
+		return trimmed
+	}
+
+	if parsed.Scheme != "" {
+		parsed.Scheme = strings.ToLower(parsed.Scheme)
+	}
+
+	if parsed.Host != "" {
+		parsed.Host = strings.ToLower(parsed.Host)
+	}
+
+	if parsed.Path != "" {
+		parsed.Path = strings.TrimRight(parsed.Path, "/")
+	}
+
+	return strings.TrimRight(parsed.String(), "/")
 }
