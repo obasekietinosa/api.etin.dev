@@ -51,7 +51,7 @@ func main() {
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
-	cfg.cors.trustedOrigins = strings.Fields(corsTrustedOrigins)
+	cfg.cors.trustedOrigins = parseTrustedOrigins(corsTrustedOrigins)
 	if len(cfg.cors.trustedOrigins) == 0 {
 		cfg.cors.trustedOrigins = []string{"https://admin.etin.dev", "https://etin.dev"}
 	}
@@ -109,4 +109,29 @@ func openDB(dsn string) (*sql.DB, error) {
 		return nil, err
 	}
 	return db, nil
+}
+
+func parseTrustedOrigins(input string) []string {
+	if input == "" {
+		return nil
+	}
+
+	fields := strings.FieldsFunc(input, func(r rune) bool {
+		switch r {
+		case ',', ' ', '\n', '\t':
+			return true
+		default:
+			return false
+		}
+	})
+
+	var origins []string
+	for _, field := range fields {
+		trimmed := strings.TrimSpace(field)
+		if trimmed != "" {
+			origins = append(origins, trimmed)
+		}
+	}
+
+	return origins
 }
