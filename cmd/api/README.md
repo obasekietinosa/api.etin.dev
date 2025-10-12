@@ -10,4 +10,4 @@ This package wires together the HTTP API server. Key files include:
 
 The command generates the OpenAPI document on startup so the latest routes and schemas are always available from the `/swagger` endpoint.
 
-The command expects the database DSN and authorisation token to be supplied either as flags or via the environment variables `WEBSITE_DB_DSN` and `WEBSITE_AUTH_KEY`.
+The command expects the database DSN and admin credentials to be supplied either as flags or via the environment variables `WEBSITE_DB_DSN`, `WEBSITE_ADMIN_EMAIL`, and `WEBSITE_ADMIN_PASSWORD`.

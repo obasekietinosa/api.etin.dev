@@ -17,17 +17,19 @@ import (
 const version = "1.0.0"
 
 type config struct {
-	port    int
-	env     string
-	dsn     string
-	authKey string
+	port          int
+	env           string
+	dsn           string
+	adminEmail    string
+	adminPassword string
 }
 
 type application struct {
-	config  config
-	logger  *log.Logger
-	models  data.Models
-	swagger []byte
+	config   config
+	logger   *log.Logger
+	models   data.Models
+	swagger  []byte
+	sessions *sessionManager
 }
 
 func main() {
@@ -36,13 +38,14 @@ func main() {
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.env, "env", "dev", "Environment (dev|stage|prod)")
 	flag.StringVar(&cfg.dsn, "dsn", os.Getenv("WEBSITE_DB_DSN"), "PostgreSQL DSN")
-	flag.StringVar(&cfg.authKey, "key", os.Getenv("WEBSITE_AUTH_KEY"), "Admin auth key")
+	flag.StringVar(&cfg.adminEmail, "admin-email", os.Getenv("WEBSITE_ADMIN_EMAIL"), "Admin login email")
+	flag.StringVar(&cfg.adminPassword, "admin-password", os.Getenv("WEBSITE_ADMIN_PASSWORD"), "Admin login password")
 	flag.Parse()
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
 
-	if cfg.authKey == "" {
-		logger.Fatal("No auth key provided")
+	if cfg.adminEmail == "" || cfg.adminPassword == "" {
+		logger.Fatal("Admin credentials must be provided")
 	}
 
 	db, err := openDB(cfg.dsn)
@@ -59,10 +62,11 @@ func main() {
 	}
 
 	app := &application{
-		config:  cfg,
-		logger:  logger,
-		models:  data.NewModels(db),
-		swagger: swaggerDoc,
+		config:   cfg,
+		logger:   logger,
+		models:   data.NewModels(db),
+		swagger:  swaggerDoc,
+		sessions: newSessionManager(24 * time.Hour),
 	}
 
 	addr := fmt.Sprintf(":%d", cfg.port)

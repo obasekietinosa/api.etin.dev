@@ -7,6 +7,8 @@ func (app *application) routes() *http.ServeMux {
 
 	mux.HandleFunc("/swagger", app.swaggerHandler)
 	mux.HandleFunc("/v1/healthcheck", app.healthcheck)
+	mux.HandleFunc("/v1/admin/login", app.adminLoginHandler)
+	mux.HandleFunc("/v1/admin/logout", app.adminLogoutHandler)
 
 	mux.HandleFunc("/v1/roles", app.getCreateRolesHandler)
 	mux.HandleFunc("/v1/roles/", app.getUpdateDeleteRolesHandler)

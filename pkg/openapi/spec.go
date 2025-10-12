@@ -40,14 +40,14 @@ func Build(apiVersion string) ([]byte, error) {
 }
 
 func buildSecuritySchemes() map[string]any {
-	return map[string]any{
-		"bearerAuth": map[string]any{
-			"type":         "http",
-			"scheme":       "bearer",
-			"bearerFormat": "JWT",
-			"description":  "Static bearer token required for administrative operations.",
-		},
-	}
+        return map[string]any{
+                "bearerAuth": map[string]any{
+                        "type":         "http",
+                        "scheme":       "bearer",
+                        "bearerFormat": "opaque token",
+                        "description":  "Bearer token issued by the admin login endpoint.",
+                },
+        }
 }
 
 func buildSchemas() map[string]any {
@@ -77,9 +77,31 @@ func buildSchemas() map[string]any {
 		return map[string]any{"$ref": "#/components/schemas/" + name}
 	}
 
-	return map[string]any{
-		"HealthcheckResponse": map[string]any{
-			"type":     "object",
+        return map[string]any{
+                "AdminLoginRequest": map[string]any{
+                        "type":     "object",
+                        "required": []string{"email", "password"},
+                        "properties": map[string]any{
+                                "email":    stringSchema("Admin email address."),
+                                "password": stringSchema("Admin password."),
+                        },
+                },
+                "AdminLoginResponse": map[string]any{
+                        "type":     "object",
+                        "required": []string{"token", "expiresAt"},
+                        "properties": map[string]any{
+                                "token":     stringSchema("Bearer token used to authenticate administrative requests."),
+                                "expiresAt": dateTimeSchema("Timestamp when the session token expires."),
+                        },
+                },
+                "AdminLogoutResponse": map[string]any{
+                        "type": "object",
+                        "properties": map[string]any{
+                                "message": stringSchema("Confirmation message."),
+                        },
+                },
+                "HealthcheckResponse": map[string]any{
+                        "type":     "object",
 			"required": []string{"status", "environment", "version"},
 			"properties": map[string]any{
 				"status":      stringSchema("Service availability status."),
@@ -390,37 +412,69 @@ func buildPaths() map[string]any {
 
 	itemIdParam := intPathParam("itemId", "Identifier of the item to fetch notes for.")
 
-	paths := map[string]any{
-		"/v1/healthcheck": map[string]any{
-			"get": map[string]any{
-				"operationId": "getHealthcheck",
-				"summary":     "Check service health",
-				"tags":        []string{"Health"},
-				"responses": map[string]any{
-					"200": jsonResponse("Service is available.", "HealthcheckResponse"),
-				},
-			},
-		},
-		"/swagger": map[string]any{
-			"get": map[string]any{
-				"operationId": "getSwaggerDocument",
-				"summary":     "Retrieve the OpenAPI specification",
-				"tags":        []string{"Documentation"},
-				"responses": map[string]any{
-					"200": map[string]any{
-						"description": "OpenAPI document for the API.",
-						"content": map[string]any{
-							"application/json": map[string]any{
-								"schema": map[string]any{"type": "object"},
-							},
-						},
-					},
-				},
-			},
-		},
-		"/v1/roles": map[string]any{
-			"get": map[string]any{
-				"operationId": "listRoles",
+        paths := map[string]any{
+                "/v1/healthcheck": map[string]any{
+                        "get": map[string]any{
+                                "operationId": "getHealthcheck",
+                                "summary":     "Check service health",
+                                "tags":        []string{"Health"},
+                                "responses": map[string]any{
+                                        "200": jsonResponse("Service is available.", "HealthcheckResponse"),
+                                },
+                        },
+                },
+                "/swagger": map[string]any{
+                        "get": map[string]any{
+                                "operationId": "getSwaggerDocument",
+                                "summary":     "Retrieve the OpenAPI specification",
+                                "tags":        []string{"Documentation"},
+                                "responses": map[string]any{
+                                        "200": map[string]any{
+                                                "description": "OpenAPI document for the API.",
+                                                "content": map[string]any{
+                                                        "application/json": map[string]any{
+                                                                "schema": map[string]any{"type": "object"},
+                                                        },
+                                                },
+                                        },
+                                },
+                        },
+                },
+                "/v1/admin/login": map[string]any{
+                        "post": map[string]any{
+                                "operationId": "adminLogin",
+                                "summary":     "Create an admin session token",
+                                "tags":        []string{"Administration"},
+                                "requestBody": map[string]any{
+                                        "required": true,
+                                        "content": map[string]any{
+                                                "application/json": map[string]any{
+                                                        "schema": ref("AdminLoginRequest"),
+                                                },
+                                        },
+                                },
+                                "responses": map[string]any{
+                                        "200": jsonResponse("Admin session created.", "AdminLoginResponse"),
+                                        "400": noContent("Invalid credentials payload."),
+                                        "401": noContent("Invalid admin credentials."),
+                                },
+                        },
+                },
+                "/v1/admin/logout": map[string]any{
+                        "post": map[string]any{
+                                "operationId": "adminLogout",
+                                "summary":     "Invalidate the current admin session token",
+                                "tags":        []string{"Administration"},
+                                "security":   bearerSecurity,
+                                "responses": map[string]any{
+                                        "200": jsonResponse("Admin session revoked.", "AdminLogoutResponse"),
+                                        "401": noContent("Missing or invalid bearer token."),
+                                },
+                        },
+                },
+                "/v1/roles": map[string]any{
+                        "get": map[string]any{
+                                "operationId": "listRoles",
 				"summary":     "List roles",
 				"tags":        []string{"Roles"},
 				"responses": map[string]any{
