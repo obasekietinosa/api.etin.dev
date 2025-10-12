@@ -45,16 +45,29 @@ psql -h localhost -U user -d website
 ```
 
 ### Running the server
-To run the server, you will need to build or run the `cmd/api` package. 
-It expects two environment variables (these can also be passed in as flags) for the database connection string and for 
-the authorisation key (this is a bit of a hack to secure the create and edit endpoints while I flesh out a 
-proper auth system)
+To run the server, you will need to build or run the `cmd/api` package.
+It expects environment variables (these can also be passed in as flags) for the database connection string
+and for the admin login credentials used to access write operations in the API.
 
 ```bash
-xport WEBSITE_DB_DSN='postgres://website:etin@localhost/website?sslmode=disable' && \
-export WEBSITE_AUTH_KEY='token-123' && \
+export WEBSITE_DB_DSN='postgres://website:etin@localhost/website?sslmode=disable' && \
+export WEBSITE_ADMIN_EMAIL='admin@example.com' && \
+export WEBSITE_ADMIN_PASSWORD='super-secret-password' && \
 go run ./cmd/api
 ```
+
+With the server running you can exchange the admin credentials for a bearer token by
+posting to the login endpoint:
+
+```bash
+curl -X POST http://localhost:4000/v1/admin/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@example.com","password":"super-secret-password"}'
+```
+
+The JSON response contains the bearer token and expiry timestamp. Supply this token in the
+`Authorization` header when calling any create, update or delete endpoints. To invalidate the
+token, call `POST /v1/admin/logout` with the same header.
 
 ### Tests
 Not a lot of tests yet, but hopefully changing soon. There are tests written for the `querybuilder` package. To run 

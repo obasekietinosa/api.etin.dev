@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"strings"
 )
 
 type envelope map[string]any
@@ -48,8 +47,10 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 }
 
 func (app *application) isRequestAuthenticated(r *http.Request) bool {
-	authHeader := strings.TrimSpace(r.Header.Get("Authorization"))
-	expected := "Bearer " + app.config.authKey
+	token, err := parseBearerToken(r.Header.Get("Authorization"))
+	if err != nil {
+		return false
+	}
 
-	return authHeader == expected
+	return app.sessions.validate(token)
 }
