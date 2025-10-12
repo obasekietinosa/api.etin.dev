@@ -2,7 +2,7 @@ package main
 
 import "net/http"
 
-func (app *application) routes() *http.ServeMux {
+func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/swagger", app.swaggerHandler)
@@ -25,5 +25,5 @@ func (app *application) routes() *http.ServeMux {
 	mux.HandleFunc("/v1/projects", app.getCreateProjectsHandler)
 	mux.HandleFunc("/v1/projects/", app.getUpdateDeleteProjectsHandler)
 
-	return mux
+	return app.enableCORS(mux)
 }
