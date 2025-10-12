@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"api.etin.dev/internal/data"
+	"api.etin.dev/pkg/openapi"
 	_ "github.com/lib/pq"
 )
 
@@ -23,9 +24,10 @@ type config struct {
 }
 
 type application struct {
-	config config
-	logger *log.Logger
-	models data.Models
+	config  config
+	logger  *log.Logger
+	models  data.Models
+	swagger []byte
 }
 
 func main() {
@@ -51,10 +53,16 @@ func main() {
 
 	logger.Printf("database connection pool established")
 
+	swaggerDoc, err := openapi.Build(version)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
 	app := &application{
-		config: cfg,
-		logger: logger,
-		models: data.NewModels(db),
+		config:  cfg,
+		logger:  logger,
+		models:  data.NewModels(db),
+		swagger: swaggerDoc,
 	}
 
 	addr := fmt.Sprintf(":%d", cfg.port)

@@ -1,0 +1,826 @@
+package openapi
+
+import (
+	"encoding/json"
+	"fmt"
+)
+
+// Build generates the OpenAPI specification document for the public API.
+// The resulting JSON is generated at application startup so the latest
+// routes and schemas are always included in the served document.
+func Build(apiVersion string) ([]byte, error) {
+	doc := map[string]any{
+		"openapi": "3.1.0",
+		"info": map[string]any{
+			"title":       "api.etin.dev",
+			"description": "Backend API powering api.etin.dev.",
+			"version":     apiVersion,
+		},
+		"servers": []map[string]any{
+			{"url": "https://api.etin.dev"},
+			{"url": "http://localhost:4000"},
+		},
+	}
+
+	components := map[string]any{
+		"schemas":         buildSchemas(),
+		"securitySchemes": buildSecuritySchemes(),
+	}
+
+	doc["components"] = components
+	doc["paths"] = buildPaths()
+
+	spec, err := json.MarshalIndent(doc, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("openapi: marshal document: %w", err)
+	}
+
+	spec = append(spec, '\n')
+	return spec, nil
+}
+
+func buildSecuritySchemes() map[string]any {
+	return map[string]any{
+		"bearerAuth": map[string]any{
+			"type":         "http",
+			"scheme":       "bearer",
+			"bearerFormat": "JWT",
+			"description":  "Static bearer token required for administrative operations.",
+		},
+	}
+}
+
+func buildSchemas() map[string]any {
+	stringSchema := func(description string) map[string]any {
+		schema := map[string]any{"type": "string"}
+		if description != "" {
+			schema["description"] = description
+		}
+		return schema
+	}
+
+	dateTimeSchema := func(description string) map[string]any {
+		schema := stringSchema(description)
+		schema["format"] = "date-time"
+		return schema
+	}
+
+	int64Schema := func(description string) map[string]any {
+		schema := map[string]any{"type": "integer", "format": "int64"}
+		if description != "" {
+			schema["description"] = description
+		}
+		return schema
+	}
+
+	ref := func(name string) map[string]any {
+		return map[string]any{"$ref": "#/components/schemas/" + name}
+	}
+
+	return map[string]any{
+		"HealthcheckResponse": map[string]any{
+			"type":     "object",
+			"required": []string{"status", "environment", "version"},
+			"properties": map[string]any{
+				"status":      stringSchema("Service availability status."),
+				"environment": stringSchema("Deployment environment for the running service."),
+				"version":     stringSchema("Semantic version of the running service."),
+			},
+		},
+		"Company": map[string]any{
+			"type":     "object",
+			"required": []string{"id", "name", "icon", "description"},
+			"properties": map[string]any{
+				"id":          int64Schema("Database identifier."),
+				"name":        stringSchema("Company display name."),
+				"icon":        stringSchema("Icon URL for the company."),
+				"description": stringSchema("Markdown description for the company."),
+			},
+		},
+		"CompanyRequest": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"name":        stringSchema("Company display name."),
+				"icon":        stringSchema("Icon URL for the company."),
+				"description": stringSchema("Markdown description for the company."),
+			},
+			"required": []string{"name"},
+		},
+		"UpdateCompanyRequest": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"name":        stringSchema("Company display name."),
+				"icon":        stringSchema("Icon URL for the company."),
+				"description": stringSchema("Markdown description for the company."),
+			},
+		},
+		"CompanyResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"company": ref("Company"),
+			},
+		},
+		"CompaniesResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"companies": map[string]any{
+					"type":  "array",
+					"items": ref("Company"),
+				},
+			},
+		},
+		"Role": map[string]any{
+			"type":     "object",
+			"required": []string{"id", "startDate", "endDate", "title", "subtitle", "companyId", "company", "companyIcon", "slug", "description", "skills"},
+			"properties": map[string]any{
+				"id":          int64Schema("Database identifier."),
+				"startDate":   dateTimeSchema("Employment start date."),
+				"endDate":     dateTimeSchema("Employment end date. Zero timestamp indicates an ongoing role."),
+				"title":       stringSchema("Role title."),
+				"subtitle":    stringSchema("Role subtitle."),
+				"companyId":   int64Schema("Identifier for the related company."),
+				"company":     stringSchema("Resolved company name."),
+				"companyIcon": stringSchema("Resolved company icon."),
+				"slug":        stringSchema("URL slug for the role."),
+				"description": stringSchema("Markdown description of responsibilities."),
+				"skills": map[string]any{
+					"type":  "array",
+					"items": stringSchema("Skill associated with the role."),
+				},
+			},
+		},
+		"CreateRoleRequest": map[string]any{
+			"type":     "object",
+			"required": []string{"startDate", "title", "companyId", "skills"},
+			"properties": map[string]any{
+				"startDate":   dateTimeSchema("Employment start date."),
+				"endDate":     dateTimeSchema("Employment end date. Zero timestamp indicates an ongoing role."),
+				"title":       stringSchema("Role title."),
+				"subtitle":    stringSchema("Role subtitle."),
+				"companyId":   int64Schema("Identifier for the related company."),
+				"description": stringSchema("Markdown description of responsibilities."),
+				"skills": map[string]any{
+					"type":  "array",
+					"items": stringSchema("Skill associated with the role."),
+				},
+			},
+		},
+		"UpdateRoleRequest": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"startDate":   dateTimeSchema("Employment start date."),
+				"endDate":     dateTimeSchema("Employment end date. Zero timestamp indicates an ongoing role."),
+				"title":       stringSchema("Role title."),
+				"subtitle":    stringSchema("Role subtitle."),
+				"companyId":   int64Schema("Identifier for the related company."),
+				"description": stringSchema("Markdown description of responsibilities."),
+				"skills": map[string]any{
+					"type":  "array",
+					"items": stringSchema("Skill associated with the role."),
+				},
+			},
+		},
+		"RoleResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"role": ref("Role"),
+			},
+		},
+		"RolesResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"roles": map[string]any{
+					"type":  "array",
+					"items": ref("Role"),
+				},
+			},
+		},
+		"Project": map[string]any{
+			"type":     "object",
+			"required": []string{"id", "startDate", "title", "description"},
+			"properties": map[string]any{
+				"id":          int64Schema("Database identifier."),
+				"startDate":   dateTimeSchema("Project start date."),
+				"endDate":     dateTimeSchema("Project end date. Omitted while the project is ongoing."),
+				"title":       stringSchema("Project title."),
+				"description": stringSchema("Project description."),
+			},
+		},
+		"CreateProjectRequest": map[string]any{
+			"type":     "object",
+			"required": []string{"startDate", "title", "description"},
+			"properties": map[string]any{
+				"startDate":   dateTimeSchema("Project start date."),
+				"endDate":     dateTimeSchema("Project end date. Omitted while the project is ongoing."),
+				"title":       stringSchema("Project title."),
+				"description": stringSchema("Project description."),
+			},
+		},
+		"UpdateProjectRequest": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"startDate":   dateTimeSchema("Project start date."),
+				"endDate":     dateTimeSchema("Project end date. Omitted while the project is ongoing."),
+				"title":       stringSchema("Project title."),
+				"description": stringSchema("Project description."),
+			},
+		},
+		"ProjectResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"project": ref("Project"),
+			},
+		},
+		"ProjectsResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"projects": map[string]any{
+					"type":  "array",
+					"items": ref("Project"),
+				},
+			},
+		},
+		"Note": map[string]any{
+			"type":     "object",
+			"required": []string{"id", "title", "subtitle", "body"},
+			"properties": map[string]any{
+				"id":          int64Schema("Database identifier."),
+				"publishedAt": dateTimeSchema("Publication timestamp."),
+				"title":       stringSchema("Note title."),
+				"subtitle":    stringSchema("Note subtitle."),
+				"body":        stringSchema("Note body in Markdown."),
+			},
+		},
+		"CreateNoteRequest": map[string]any{
+			"type":     "object",
+			"required": []string{"title"},
+			"properties": map[string]any{
+				"title":       stringSchema("Note title."),
+				"subtitle":    stringSchema("Note subtitle."),
+				"body":        stringSchema("Note body in Markdown."),
+				"publishedAt": dateTimeSchema("Publication timestamp."),
+			},
+		},
+		"UpdateNoteRequest": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"title":       stringSchema("Note title."),
+				"subtitle":    stringSchema("Note subtitle."),
+				"body":        stringSchema("Note body in Markdown."),
+				"publishedAt": dateTimeSchema("Publication timestamp."),
+			},
+		},
+		"NoteResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"note": ref("Note"),
+			},
+		},
+		"NotesResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"notes": map[string]any{
+					"type":  "array",
+					"items": ref("Note"),
+				},
+			},
+		},
+		"ItemNote": map[string]any{
+			"type":     "object",
+			"required": []string{"id", "noteId", "itemId", "itemType"},
+			"properties": map[string]any{
+				"id":     int64Schema("Database identifier."),
+				"noteId": int64Schema("Linked note identifier."),
+				"itemId": int64Schema("Linked item identifier."),
+				"itemType": map[string]any{
+					"type":        "string",
+					"description": "Type of item linked to the note.",
+					"enum":        []string{"notes", "roles", "projects"},
+				},
+			},
+		},
+		"CreateItemNoteRequest": map[string]any{
+			"type":     "object",
+			"required": []string{"noteId", "itemId", "itemType"},
+			"properties": map[string]any{
+				"noteId": int64Schema("Linked note identifier."),
+				"itemId": int64Schema("Linked item identifier."),
+				"itemType": map[string]any{
+					"type":        "string",
+					"description": "Type of item linked to the note.",
+					"enum":        []string{"notes", "roles", "projects"},
+				},
+			},
+		},
+		"UpdateItemNoteRequest": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"noteId": int64Schema("Linked note identifier."),
+				"itemId": int64Schema("Linked item identifier."),
+				"itemType": map[string]any{
+					"type":        "string",
+					"description": "Type of item linked to the note.",
+					"enum":        []string{"notes", "roles", "projects"},
+				},
+			},
+		},
+		"ItemNoteResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"itemNote": ref("ItemNote"),
+			},
+		},
+		"ItemNotesResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"itemNotes": map[string]any{
+					"type":  "array",
+					"items": ref("ItemNote"),
+				},
+			},
+		},
+	}
+}
+
+func buildPaths() map[string]any {
+	ref := func(name string) map[string]any {
+		return map[string]any{"$ref": "#/components/schemas/" + name}
+	}
+
+	jsonResponse := func(description, schema string) map[string]any {
+		return map[string]any{
+			"description": description,
+			"content": map[string]any{
+				"application/json": map[string]any{
+					"schema": ref(schema),
+				},
+			},
+		}
+	}
+
+	noContent := func(description string) map[string]any {
+		return map[string]any{"description": description}
+	}
+
+	bearerSecurity := []map[string]any{{"bearerAuth": []string{}}}
+
+	intPathParam := func(name, description string) map[string]any {
+		return map[string]any{
+			"name":        name,
+			"in":          "path",
+			"required":    true,
+			"description": description,
+			"schema": map[string]any{
+				"type":   "integer",
+				"format": "int64",
+			},
+		}
+	}
+
+	itemTypeParam := map[string]any{
+		"name":        "itemType",
+		"in":          "path",
+		"required":    true,
+		"description": "Type of item to fetch notes for.",
+		"schema": map[string]any{
+			"type": "string",
+			"enum": []string{"notes", "roles", "projects"},
+		},
+	}
+
+	itemIdParam := intPathParam("itemId", "Identifier of the item to fetch notes for.")
+
+	paths := map[string]any{
+		"/v1/healthcheck": map[string]any{
+			"get": map[string]any{
+				"operationId": "getHealthcheck",
+				"summary":     "Check service health",
+				"tags":        []string{"Health"},
+				"responses": map[string]any{
+					"200": jsonResponse("Service is available.", "HealthcheckResponse"),
+				},
+			},
+		},
+		"/swagger": map[string]any{
+			"get": map[string]any{
+				"operationId": "getSwaggerDocument",
+				"summary":     "Retrieve the OpenAPI specification",
+				"tags":        []string{"Documentation"},
+				"responses": map[string]any{
+					"200": map[string]any{
+						"description": "OpenAPI document for the API.",
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{"type": "object"},
+							},
+						},
+					},
+				},
+			},
+		},
+		"/v1/roles": map[string]any{
+			"get": map[string]any{
+				"operationId": "listRoles",
+				"summary":     "List roles",
+				"tags":        []string{"Roles"},
+				"responses": map[string]any{
+					"200": jsonResponse("Roles retrieved.", "RolesResponse"),
+					"500": noContent("Server error retrieving roles."),
+				},
+			},
+			"post": map[string]any{
+				"operationId": "createRole",
+				"summary":     "Create a role",
+				"tags":        []string{"Roles"},
+				"security":    bearerSecurity,
+				"requestBody": map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"application/json": map[string]any{
+							"schema": ref("CreateRoleRequest"),
+						},
+					},
+				},
+				"responses": map[string]any{
+					"201": jsonResponse("Role created.", "RoleResponse"),
+					"400": noContent("Invalid payload."),
+					"403": noContent("Missing or invalid bearer token."),
+				},
+			},
+		},
+		"/v1/roles/{roleId}": map[string]any{
+			"get": map[string]any{
+				"operationId": "getRole",
+				"summary":     "Retrieve a role",
+				"tags":        []string{"Roles"},
+				"parameters":  []map[string]any{intPathParam("roleId", "Identifier of the role.")},
+				"responses": map[string]any{
+					"200": jsonResponse("Role retrieved.", "RoleResponse"),
+					"400": noContent("Invalid role identifier."),
+					"404": noContent("Role not found."),
+				},
+			},
+			"put": map[string]any{
+				"operationId": "updateRole",
+				"summary":     "Update a role",
+				"tags":        []string{"Roles"},
+				"security":    bearerSecurity,
+				"parameters":  []map[string]any{intPathParam("roleId", "Identifier of the role.")},
+				"requestBody": map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"application/json": map[string]any{
+							"schema": ref("UpdateRoleRequest"),
+						},
+					},
+				},
+				"responses": map[string]any{
+					"200": jsonResponse("Role updated.", "RoleResponse"),
+					"400": noContent("Invalid payload."),
+					"403": noContent("Missing or invalid bearer token."),
+					"404": noContent("Role not found."),
+					"500": noContent("Server error updating role."),
+				},
+			},
+			"delete": map[string]any{
+				"operationId": "deleteRole",
+				"summary":     "Delete a role",
+				"tags":        []string{"Roles"},
+				"security":    bearerSecurity,
+				"parameters":  []map[string]any{intPathParam("roleId", "Identifier of the role.")},
+				"responses": map[string]any{
+					"204": noContent("Role deleted."),
+					"400": noContent("Invalid role identifier."),
+					"403": noContent("Missing or invalid bearer token."),
+					"404": noContent("Role not found."),
+				},
+			},
+		},
+		"/v1/companies": map[string]any{
+			"get": map[string]any{
+				"operationId": "listCompanies",
+				"summary":     "List companies",
+				"tags":        []string{"Companies"},
+				"responses": map[string]any{
+					"200": jsonResponse("Companies retrieved.", "CompaniesResponse"),
+					"500": noContent("Server error retrieving companies."),
+				},
+			},
+			"post": map[string]any{
+				"operationId": "createCompany",
+				"summary":     "Create a company",
+				"tags":        []string{"Companies"},
+				"security":    bearerSecurity,
+				"requestBody": map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"application/json": map[string]any{
+							"schema": ref("UpdateCompanyRequest"),
+						},
+					},
+				},
+				"responses": map[string]any{
+					"200": jsonResponse("Company created.", "CompanyResponse"),
+					"400": noContent("Invalid payload."),
+					"403": noContent("Missing or invalid bearer token."),
+				},
+			},
+		},
+		"/v1/companies/{companyId}": map[string]any{
+			"get": map[string]any{
+				"operationId": "getCompany",
+				"summary":     "Retrieve a company",
+				"tags":        []string{"Companies"},
+				"parameters":  []map[string]any{intPathParam("companyId", "Identifier of the company.")},
+				"responses": map[string]any{
+					"200": jsonResponse("Company retrieved.", "CompanyResponse"),
+					"400": noContent("Invalid company identifier."),
+					"500": noContent("Server error retrieving company."),
+				},
+			},
+			"put": map[string]any{
+				"operationId": "updateCompany",
+				"summary":     "Update a company",
+				"tags":        []string{"Companies"},
+				"security":    bearerSecurity,
+				"parameters":  []map[string]any{intPathParam("companyId", "Identifier of the company.")},
+				"requestBody": map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"application/json": map[string]any{
+							"schema": ref("UpdateCompanyRequest"),
+						},
+					},
+				},
+				"responses": map[string]any{
+					"202": jsonResponse("Company updated.", "CompanyResponse"),
+					"400": noContent("Invalid payload."),
+					"403": noContent("Missing or invalid bearer token."),
+					"500": noContent("Server error updating company."),
+				},
+			},
+			"delete": map[string]any{
+				"operationId": "deleteCompany",
+				"summary":     "Delete a company",
+				"tags":        []string{"Companies"},
+				"security":    bearerSecurity,
+				"parameters":  []map[string]any{intPathParam("companyId", "Identifier of the company.")},
+				"responses": map[string]any{
+					"204": noContent("Company deleted."),
+					"400": noContent("Invalid company identifier."),
+					"403": noContent("Missing or invalid bearer token."),
+					"500": noContent("Server error deleting company."),
+				},
+			},
+		},
+		"/v1/projects": map[string]any{
+			"get": map[string]any{
+				"operationId": "listProjects",
+				"summary":     "List projects",
+				"tags":        []string{"Projects"},
+				"responses": map[string]any{
+					"200": jsonResponse("Projects retrieved.", "ProjectsResponse"),
+					"500": noContent("Server error retrieving projects."),
+				},
+			},
+			"post": map[string]any{
+				"operationId": "createProject",
+				"summary":     "Create a project",
+				"tags":        []string{"Projects"},
+				"security":    bearerSecurity,
+				"requestBody": map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"application/json": map[string]any{
+							"schema": ref("CreateProjectRequest"),
+						},
+					},
+				},
+				"responses": map[string]any{
+					"201": jsonResponse("Project created.", "ProjectResponse"),
+					"400": noContent("Invalid payload."),
+					"403": noContent("Missing or invalid bearer token."),
+				},
+			},
+		},
+		"/v1/projects/{projectId}": map[string]any{
+			"get": map[string]any{
+				"operationId": "getProject",
+				"summary":     "Retrieve a project",
+				"tags":        []string{"Projects"},
+				"parameters":  []map[string]any{intPathParam("projectId", "Identifier of the project.")},
+				"responses": map[string]any{
+					"200": jsonResponse("Project retrieved.", "ProjectResponse"),
+					"400": noContent("Invalid project identifier."),
+					"404": noContent("Project not found."),
+				},
+			},
+			"put": map[string]any{
+				"operationId": "updateProject",
+				"summary":     "Update a project",
+				"tags":        []string{"Projects"},
+				"security":    bearerSecurity,
+				"parameters":  []map[string]any{intPathParam("projectId", "Identifier of the project.")},
+				"requestBody": map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"application/json": map[string]any{
+							"schema": ref("UpdateProjectRequest"),
+						},
+					},
+				},
+				"responses": map[string]any{
+					"200": jsonResponse("Project updated.", "ProjectResponse"),
+					"400": noContent("Invalid payload."),
+					"403": noContent("Missing or invalid bearer token."),
+					"404": noContent("Project not found."),
+					"500": noContent("Server error updating project."),
+				},
+			},
+			"delete": map[string]any{
+				"operationId": "deleteProject",
+				"summary":     "Delete a project",
+				"tags":        []string{"Projects"},
+				"security":    bearerSecurity,
+				"parameters":  []map[string]any{intPathParam("projectId", "Identifier of the project.")},
+				"responses": map[string]any{
+					"204": noContent("Project deleted."),
+					"400": noContent("Invalid project identifier."),
+					"403": noContent("Missing or invalid bearer token."),
+					"404": noContent("Project not found."),
+				},
+			},
+		},
+		"/v1/notes": map[string]any{
+			"get": map[string]any{
+				"operationId": "listNotes",
+				"summary":     "List notes",
+				"tags":        []string{"Notes"},
+				"responses": map[string]any{
+					"200": jsonResponse("Notes retrieved.", "NotesResponse"),
+					"500": noContent("Server error retrieving notes."),
+				},
+			},
+			"post": map[string]any{
+				"operationId": "createNote",
+				"summary":     "Create a note",
+				"tags":        []string{"Notes"},
+				"security":    bearerSecurity,
+				"requestBody": map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"application/json": map[string]any{
+							"schema": ref("CreateNoteRequest"),
+						},
+					},
+				},
+				"responses": map[string]any{
+					"201": jsonResponse("Note created.", "NoteResponse"),
+					"400": noContent("Invalid payload."),
+					"403": noContent("Missing or invalid bearer token."),
+				},
+			},
+		},
+		"/v1/notes/{noteId}": map[string]any{
+			"get": map[string]any{
+				"operationId": "getNote",
+				"summary":     "Retrieve a note",
+				"tags":        []string{"Notes"},
+				"parameters":  []map[string]any{intPathParam("noteId", "Identifier of the note.")},
+				"responses": map[string]any{
+					"200": jsonResponse("Note retrieved.", "NoteResponse"),
+					"400": noContent("Invalid note identifier."),
+					"404": noContent("Note not found."),
+				},
+			},
+			"put": map[string]any{
+				"operationId": "updateNote",
+				"summary":     "Update a note",
+				"tags":        []string{"Notes"},
+				"security":    bearerSecurity,
+				"parameters":  []map[string]any{intPathParam("noteId", "Identifier of the note.")},
+				"requestBody": map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"application/json": map[string]any{
+							"schema": ref("UpdateNoteRequest"),
+						},
+					},
+				},
+				"responses": map[string]any{
+					"200": jsonResponse("Note updated.", "NoteResponse"),
+					"400": noContent("Invalid payload."),
+					"403": noContent("Missing or invalid bearer token."),
+					"404": noContent("Note not found."),
+					"500": noContent("Server error updating note."),
+				},
+			},
+			"delete": map[string]any{
+				"operationId": "deleteNote",
+				"summary":     "Delete a note",
+				"tags":        []string{"Notes"},
+				"security":    bearerSecurity,
+				"parameters":  []map[string]any{intPathParam("noteId", "Identifier of the note.")},
+				"responses": map[string]any{
+					"204": noContent("Note deleted."),
+					"400": noContent("Invalid note identifier."),
+					"403": noContent("Missing or invalid bearer token."),
+					"404": noContent("Note not found."),
+				},
+			},
+		},
+		"/v1/item-notes": map[string]any{
+			"get": map[string]any{
+				"operationId": "listItemNotes",
+				"summary":     "List item-note links",
+				"tags":        []string{"Item Notes"},
+				"responses": map[string]any{
+					"200": jsonResponse("Item note associations retrieved.", "ItemNotesResponse"),
+					"500": noContent("Server error retrieving item note associations."),
+				},
+			},
+			"post": map[string]any{
+				"operationId": "createItemNote",
+				"summary":     "Create an item-note link",
+				"tags":        []string{"Item Notes"},
+				"security":    bearerSecurity,
+				"requestBody": map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"application/json": map[string]any{
+							"schema": ref("CreateItemNoteRequest"),
+						},
+					},
+				},
+				"responses": map[string]any{
+					"201": jsonResponse("Item note association created.", "ItemNoteResponse"),
+					"400": noContent("Invalid payload."),
+					"403": noContent("Missing or invalid bearer token."),
+				},
+			},
+		},
+		"/v1/item-notes/{itemNoteId}": map[string]any{
+			"get": map[string]any{
+				"operationId": "getItemNote",
+				"summary":     "Retrieve an item-note link",
+				"tags":        []string{"Item Notes"},
+				"parameters":  []map[string]any{intPathParam("itemNoteId", "Identifier of the item-note link.")},
+				"responses": map[string]any{
+					"200": jsonResponse("Item note association retrieved.", "ItemNoteResponse"),
+					"400": noContent("Invalid item-note identifier."),
+					"404": noContent("Item note association not found."),
+				},
+			},
+			"put": map[string]any{
+				"operationId": "updateItemNote",
+				"summary":     "Update an item-note link",
+				"tags":        []string{"Item Notes"},
+				"security":    bearerSecurity,
+				"parameters":  []map[string]any{intPathParam("itemNoteId", "Identifier of the item-note link.")},
+				"requestBody": map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"application/json": map[string]any{
+							"schema": ref("UpdateItemNoteRequest"),
+						},
+					},
+				},
+				"responses": map[string]any{
+					"200": jsonResponse("Item note association updated.", "ItemNoteResponse"),
+					"400": noContent("Invalid payload."),
+					"403": noContent("Missing or invalid bearer token."),
+					"404": noContent("Item note association not found."),
+					"500": noContent("Server error updating item note association."),
+				},
+			},
+			"delete": map[string]any{
+				"operationId": "deleteItemNote",
+				"summary":     "Delete an item-note link",
+				"tags":        []string{"Item Notes"},
+				"security":    bearerSecurity,
+				"parameters":  []map[string]any{intPathParam("itemNoteId", "Identifier of the item-note link.")},
+				"responses": map[string]any{
+					"204": noContent("Item note association deleted."),
+					"400": noContent("Invalid item-note identifier."),
+					"403": noContent("Missing or invalid bearer token."),
+					"404": noContent("Item note association not found."),
+				},
+			},
+		},
+		"/v1/item-notes/items/{itemType}/{itemId}": map[string]any{
+			"get": map[string]any{
+				"operationId": "listNotesForItem",
+				"summary":     "List notes associated with an item",
+				"tags":        []string{"Item Notes"},
+				"parameters":  []map[string]any{itemTypeParam, itemIdParam},
+				"responses": map[string]any{
+					"200": jsonResponse("Notes retrieved.", "NotesResponse"),
+					"400": noContent("Invalid item type or identifier."),
+					"500": noContent("Server error retrieving notes for the item."),
+				},
+			},
+		},
+	}
+
+	return paths
+}
