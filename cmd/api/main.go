@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"api.etin.dev/internal/data"
@@ -22,6 +23,9 @@ type config struct {
 	dsn           string
 	adminEmail    string
 	adminPassword string
+	cors          struct {
+		trustedOrigins []string
+	}
 }
 
 type application struct {
@@ -35,14 +39,22 @@ type application struct {
 func main() {
 	var cfg config
 
+	var corsTrustedOrigins string
+
 	flag.IntVar(&cfg.port, "port", 4000, "API server port")
 	flag.StringVar(&cfg.env, "env", "dev", "Environment (dev|stage|prod)")
 	flag.StringVar(&cfg.dsn, "dsn", os.Getenv("WEBSITE_DB_DSN"), "PostgreSQL DSN")
 	flag.StringVar(&cfg.adminEmail, "admin-email", os.Getenv("WEBSITE_ADMIN_EMAIL"), "Admin login email")
 	flag.StringVar(&cfg.adminPassword, "admin-password", os.Getenv("WEBSITE_ADMIN_PASSWORD"), "Admin login password")
+	flag.StringVar(&corsTrustedOrigins, "cors-trusted-origins", os.Getenv("WEBSITE_CORS_TRUSTED_ORIGINS"), "Space separated list of trusted CORS origins")
 	flag.Parse()
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
+
+	cfg.cors.trustedOrigins = strings.Fields(corsTrustedOrigins)
+	if len(cfg.cors.trustedOrigins) == 0 {
+		cfg.cors.trustedOrigins = []string{"https://admin.etin.dev", "https://etin.dev"}
+	}
 
 	if cfg.adminEmail == "" || cfg.adminPassword == "" {
 		logger.Fatal("Admin credentials must be provided")

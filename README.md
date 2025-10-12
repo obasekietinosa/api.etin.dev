@@ -53,8 +53,13 @@ and for the admin login credentials used to access write operations in the API.
 export WEBSITE_DB_DSN='postgres://website:etin@localhost/website?sslmode=disable' && \
 export WEBSITE_ADMIN_EMAIL='admin@example.com' && \
 export WEBSITE_ADMIN_PASSWORD='super-secret-password' && \
+export WEBSITE_CORS_TRUSTED_ORIGINS='http://localhost:3000 https://admin.example.com' && \
 go run ./cmd/api
 ```
+
+The optional `WEBSITE_CORS_TRUSTED_ORIGINS` environment variable (or the `-cors-trusted-origins` flag) accepts a space separated
+list of origins that should receive CORS headers. When unset, the API will automatically trust `https://etin.dev` and
+`https://admin.etin.dev`.
 
 With the server running you can exchange the admin credentials for a bearer token by
 posting to the login endpoint:
