@@ -5,6 +5,7 @@ import "net/http"
 func (app *application) routes() *http.ServeMux {
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("/swagger", app.swaggerHandler)
 	mux.HandleFunc("/v1/healthcheck", app.healthcheck)
 
 	mux.HandleFunc("/v1/roles", app.getCreateRolesHandler)
