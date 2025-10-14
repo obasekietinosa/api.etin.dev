@@ -40,14 +40,14 @@ func Build(apiVersion string) ([]byte, error) {
 }
 
 func buildSecuritySchemes() map[string]any {
-        return map[string]any{
-                "bearerAuth": map[string]any{
-                        "type":         "http",
-                        "scheme":       "bearer",
-                        "bearerFormat": "opaque token",
-                        "description":  "Bearer token issued by the admin login endpoint.",
-                },
-        }
+	return map[string]any{
+		"bearerAuth": map[string]any{
+			"type":         "http",
+			"scheme":       "bearer",
+			"bearerFormat": "opaque token",
+			"description":  "Bearer token issued by the admin login endpoint.",
+		},
+	}
 }
 
 func buildSchemas() map[string]any {
@@ -77,31 +77,31 @@ func buildSchemas() map[string]any {
 		return map[string]any{"$ref": "#/components/schemas/" + name}
 	}
 
-        return map[string]any{
-                "AdminLoginRequest": map[string]any{
-                        "type":     "object",
-                        "required": []string{"email", "password"},
-                        "properties": map[string]any{
-                                "email":    stringSchema("Admin email address."),
-                                "password": stringSchema("Admin password."),
-                        },
-                },
-                "AdminLoginResponse": map[string]any{
-                        "type":     "object",
-                        "required": []string{"token", "expiresAt"},
-                        "properties": map[string]any{
-                                "token":     stringSchema("Bearer token used to authenticate administrative requests."),
-                                "expiresAt": dateTimeSchema("Timestamp when the session token expires."),
-                        },
-                },
-                "AdminLogoutResponse": map[string]any{
-                        "type": "object",
-                        "properties": map[string]any{
-                                "message": stringSchema("Confirmation message."),
-                        },
-                },
-                "HealthcheckResponse": map[string]any{
-                        "type":     "object",
+	return map[string]any{
+		"AdminLoginRequest": map[string]any{
+			"type":     "object",
+			"required": []string{"email", "password"},
+			"properties": map[string]any{
+				"email":    stringSchema("Admin email address."),
+				"password": stringSchema("Admin password."),
+			},
+		},
+		"AdminLoginResponse": map[string]any{
+			"type":     "object",
+			"required": []string{"token", "expiresAt"},
+			"properties": map[string]any{
+				"token":     stringSchema("Bearer token used to authenticate administrative requests."),
+				"expiresAt": dateTimeSchema("Timestamp when the session token expires."),
+			},
+		},
+		"AdminLogoutResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"message": stringSchema("Confirmation message."),
+			},
+		},
+		"HealthcheckResponse": map[string]any{
+			"type":     "object",
 			"required": []string{"status", "environment", "version"},
 			"properties": map[string]any{
 				"status":      stringSchema("Service availability status."),
@@ -262,6 +262,26 @@ func buildSchemas() map[string]any {
 				},
 			},
 		},
+		"Tag": map[string]any{
+			"type":     "object",
+			"required": []string{"id", "name", "slug"},
+			"properties": map[string]any{
+				"id":    int64Schema("Database identifier."),
+				"name":  stringSchema("Tag display name."),
+				"slug":  stringSchema("URL slug for the tag."),
+				"icon":  stringSchema("Optional emoji or icon for the tag."),
+				"theme": stringSchema("Optional theme identifier for the tag."),
+			},
+		},
+		"TagsResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"tags": map[string]any{
+					"type":  "array",
+					"items": ref("Tag"),
+				},
+			},
+		},
 		"Note": map[string]any{
 			"type":     "object",
 			"required": []string{"id", "title", "subtitle", "body"},
@@ -361,6 +381,60 @@ func buildSchemas() map[string]any {
 				},
 			},
 		},
+		"TagItem": map[string]any{
+			"type":     "object",
+			"required": []string{"id", "tagId", "itemId", "itemType"},
+			"properties": map[string]any{
+				"id":     int64Schema("Database identifier."),
+				"tagId":  int64Schema("Linked tag identifier."),
+				"itemId": int64Schema("Linked item identifier."),
+				"itemType": map[string]any{
+					"type":        "string",
+					"description": "Type of item linked to the tag.",
+					"enum":        []string{"notes", "roles", "projects"},
+				},
+			},
+		},
+		"CreateTagItemRequest": map[string]any{
+			"type":     "object",
+			"required": []string{"tagId", "itemId", "itemType"},
+			"properties": map[string]any{
+				"tagId":  int64Schema("Linked tag identifier."),
+				"itemId": int64Schema("Linked item identifier."),
+				"itemType": map[string]any{
+					"type":        "string",
+					"description": "Type of item linked to the tag.",
+					"enum":        []string{"notes", "roles", "projects"},
+				},
+			},
+		},
+		"UpdateTagItemRequest": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"tagId":  int64Schema("Linked tag identifier."),
+				"itemId": int64Schema("Linked item identifier."),
+				"itemType": map[string]any{
+					"type":        "string",
+					"description": "Type of item linked to the tag.",
+					"enum":        []string{"notes", "roles", "projects"},
+				},
+			},
+		},
+		"TagItemResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"taggedItem": ref("TagItem"),
+			},
+		},
+		"TagItemsResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"taggedItems": map[string]any{
+					"type":  "array",
+					"items": ref("TagItem"),
+				},
+			},
+		},
 	}
 }
 
@@ -403,78 +477,78 @@ func buildPaths() map[string]any {
 		"name":        "itemType",
 		"in":          "path",
 		"required":    true,
-		"description": "Type of item to fetch notes for.",
+		"description": "Type of item to fetch related records for.",
 		"schema": map[string]any{
 			"type": "string",
 			"enum": []string{"notes", "roles", "projects"},
 		},
 	}
 
-	itemIdParam := intPathParam("itemId", "Identifier of the item to fetch notes for.")
+	itemIdParam := intPathParam("itemId", "Identifier of the item to fetch related records for.")
 
-        paths := map[string]any{
-                "/v1/healthcheck": map[string]any{
-                        "get": map[string]any{
-                                "operationId": "getHealthcheck",
-                                "summary":     "Check service health",
-                                "tags":        []string{"Health"},
-                                "responses": map[string]any{
-                                        "200": jsonResponse("Service is available.", "HealthcheckResponse"),
-                                },
-                        },
-                },
-                "/swagger": map[string]any{
-                        "get": map[string]any{
-                                "operationId": "getSwaggerDocument",
-                                "summary":     "Retrieve the OpenAPI specification",
-                                "tags":        []string{"Documentation"},
-                                "responses": map[string]any{
-                                        "200": map[string]any{
-                                                "description": "OpenAPI document for the API.",
-                                                "content": map[string]any{
-                                                        "application/json": map[string]any{
-                                                                "schema": map[string]any{"type": "object"},
-                                                        },
-                                                },
-                                        },
-                                },
-                        },
-                },
-                "/v1/admin/login": map[string]any{
-                        "post": map[string]any{
-                                "operationId": "adminLogin",
-                                "summary":     "Create an admin session token",
-                                "tags":        []string{"Administration"},
-                                "requestBody": map[string]any{
-                                        "required": true,
-                                        "content": map[string]any{
-                                                "application/json": map[string]any{
-                                                        "schema": ref("AdminLoginRequest"),
-                                                },
-                                        },
-                                },
-                                "responses": map[string]any{
-                                        "200": jsonResponse("Admin session created.", "AdminLoginResponse"),
-                                        "400": noContent("Invalid credentials payload."),
-                                        "401": noContent("Invalid admin credentials."),
-                                },
-                        },
-                },
-                "/v1/admin/logout": map[string]any{
-                        "post": map[string]any{
-                                "operationId": "adminLogout",
-                                "summary":     "Invalidate the current admin session token",
-                                "tags":        []string{"Administration"},
-                                "security":   bearerSecurity,
-                                "responses": map[string]any{
-                                        "200": jsonResponse("Admin session revoked.", "AdminLogoutResponse"),
-                                        "401": noContent("Missing or invalid bearer token."),
-                                },
-                        },
-                },
-                "/v1/roles": map[string]any{
-                        "get": map[string]any{
-                                "operationId": "listRoles",
+	paths := map[string]any{
+		"/v1/healthcheck": map[string]any{
+			"get": map[string]any{
+				"operationId": "getHealthcheck",
+				"summary":     "Check service health",
+				"tags":        []string{"Health"},
+				"responses": map[string]any{
+					"200": jsonResponse("Service is available.", "HealthcheckResponse"),
+				},
+			},
+		},
+		"/swagger": map[string]any{
+			"get": map[string]any{
+				"operationId": "getSwaggerDocument",
+				"summary":     "Retrieve the OpenAPI specification",
+				"tags":        []string{"Documentation"},
+				"responses": map[string]any{
+					"200": map[string]any{
+						"description": "OpenAPI document for the API.",
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{"type": "object"},
+							},
+						},
+					},
+				},
+			},
+		},
+		"/v1/admin/login": map[string]any{
+			"post": map[string]any{
+				"operationId": "adminLogin",
+				"summary":     "Create an admin session token",
+				"tags":        []string{"Administration"},
+				"requestBody": map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"application/json": map[string]any{
+							"schema": ref("AdminLoginRequest"),
+						},
+					},
+				},
+				"responses": map[string]any{
+					"200": jsonResponse("Admin session created.", "AdminLoginResponse"),
+					"400": noContent("Invalid credentials payload."),
+					"401": noContent("Invalid admin credentials."),
+				},
+			},
+		},
+		"/v1/admin/logout": map[string]any{
+			"post": map[string]any{
+				"operationId": "adminLogout",
+				"summary":     "Invalidate the current admin session token",
+				"tags":        []string{"Administration"},
+				"security":    bearerSecurity,
+				"responses": map[string]any{
+					"200": jsonResponse("Admin session revoked.", "AdminLogoutResponse"),
+					"401": noContent("Missing or invalid bearer token."),
+				},
+			},
+		},
+		"/v1/roles": map[string]any{
+			"get": map[string]any{
+				"operationId": "listRoles",
 				"summary":     "List roles",
 				"tags":        []string{"Roles"},
 				"responses": map[string]any{
@@ -871,6 +945,97 @@ func buildPaths() map[string]any {
 					"200": jsonResponse("Notes retrieved.", "NotesResponse"),
 					"400": noContent("Invalid item type or identifier."),
 					"500": noContent("Server error retrieving notes for the item."),
+				},
+			},
+		},
+		"/v1/tagged-items": map[string]any{
+			"get": map[string]any{
+				"operationId": "listTagItems",
+				"summary":     "List tag associations",
+				"tags":        []string{"Tag Items"},
+				"responses": map[string]any{
+					"200": jsonResponse("Tag associations retrieved.", "TagItemsResponse"),
+					"500": noContent("Server error retrieving tag associations."),
+				},
+			},
+			"post": map[string]any{
+				"operationId": "createTagItem",
+				"summary":     "Create a tag association",
+				"tags":        []string{"Tag Items"},
+				"security":    bearerSecurity,
+				"requestBody": map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"application/json": map[string]any{
+							"schema": ref("CreateTagItemRequest"),
+						},
+					},
+				},
+				"responses": map[string]any{
+					"201": jsonResponse("Tag association created.", "TagItemResponse"),
+					"400": noContent("Invalid payload."),
+					"403": noContent("Missing or invalid bearer token."),
+				},
+			},
+		},
+		"/v1/tagged-items/{taggedItemId}": map[string]any{
+			"get": map[string]any{
+				"operationId": "getTagItem",
+				"summary":     "Retrieve a tag association",
+				"tags":        []string{"Tag Items"},
+				"parameters":  []map[string]any{intPathParam("taggedItemId", "Identifier of the tag association.")},
+				"responses": map[string]any{
+					"200": jsonResponse("Tag association retrieved.", "TagItemResponse"),
+					"400": noContent("Invalid tag association identifier."),
+					"404": noContent("Tag association not found."),
+				},
+			},
+			"put": map[string]any{
+				"operationId": "updateTagItem",
+				"summary":     "Update a tag association",
+				"tags":        []string{"Tag Items"},
+				"security":    bearerSecurity,
+				"parameters":  []map[string]any{intPathParam("taggedItemId", "Identifier of the tag association.")},
+				"requestBody": map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"application/json": map[string]any{
+							"schema": ref("UpdateTagItemRequest"),
+						},
+					},
+				},
+				"responses": map[string]any{
+					"200": jsonResponse("Tag association updated.", "TagItemResponse"),
+					"400": noContent("Invalid payload."),
+					"403": noContent("Missing or invalid bearer token."),
+					"404": noContent("Tag association not found."),
+					"500": noContent("Server error updating tag association."),
+				},
+			},
+			"delete": map[string]any{
+				"operationId": "deleteTagItem",
+				"summary":     "Delete a tag association",
+				"tags":        []string{"Tag Items"},
+				"security":    bearerSecurity,
+				"parameters":  []map[string]any{intPathParam("taggedItemId", "Identifier of the tag association.")},
+				"responses": map[string]any{
+					"204": noContent("Tag association deleted."),
+					"400": noContent("Invalid tag association identifier."),
+					"403": noContent("Missing or invalid bearer token."),
+					"404": noContent("Tag association not found."),
+				},
+			},
+		},
+		"/v1/tagged-items/items/{itemType}/{itemId}": map[string]any{
+			"get": map[string]any{
+				"operationId": "listTagsForItem",
+				"summary":     "List tags associated with an item",
+				"tags":        []string{"Tag Items"},
+				"parameters":  []map[string]any{itemTypeParam, itemIdParam},
+				"responses": map[string]any{
+					"200": jsonResponse("Tags retrieved.", "TagsResponse"),
+					"400": noContent("Invalid item type or identifier."),
+					"500": noContent("Server error retrieving tags for the item."),
 				},
 			},
 		},

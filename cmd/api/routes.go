@@ -25,5 +25,9 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("/v1/projects", app.getCreateProjectsHandler)
 	mux.HandleFunc("/v1/projects/", app.getUpdateDeleteProjectsHandler)
 
+	mux.HandleFunc("/v1/tagged-items", app.getCreateTagItemsHandler)
+	mux.HandleFunc("/v1/tagged-items/", app.getUpdateDeleteTagItemsHandler)
+	mux.HandleFunc("/v1/tagged-items/items/", app.getTagsForItemHandler)
+
 	return app.enableCORS(mux)
 }
