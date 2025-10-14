@@ -70,6 +70,117 @@ func (t TagItemModel) Delete(id int64) error {
 	return nil
 }
 
+func (t TagItemModel) Get(id int64) (*TagItem, error) {
+	if id < 1 {
+		return nil, errors.New("record not found")
+	}
+
+	row, err := t.Query.SetBaseTable("tagged_items").Select(
+		"id",
+		"tagId",
+		"itemId",
+		"itemType",
+	).WhereEqual("id", id).QueryRow()
+	if err != nil {
+		return nil, err
+	}
+
+	var tagItem TagItem
+	var itemType string
+
+	if err := row.Scan(
+		&tagItem.ID,
+		&tagItem.TagID,
+		&tagItem.ItemID,
+		&itemType,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("record not found")
+		}
+		return nil, err
+	}
+
+	tagItem.ItemType = ItemType(itemType)
+
+	return &tagItem, nil
+}
+
+func (t TagItemModel) Update(tagItem *TagItem) error {
+	if err := validateItemType(tagItem.ItemType); err != nil {
+		return err
+	}
+
+	values := querybuilder.Clauses{
+		{ColumnName: "tagId", Value: tagItem.TagID},
+		{ColumnName: "itemId", Value: tagItem.ItemID},
+		{ColumnName: "itemType", Value: string(tagItem.ItemType)},
+	}
+
+	row, err := t.Query.SetBaseTable("tagged_items").Update(values).
+		WhereEqual("id", tagItem.ID).
+		Returning("id", "tagId", "itemId", "itemType").
+		QueryRow()
+	if err != nil {
+		return err
+	}
+
+	var itemType string
+
+	if err := row.Scan(
+		&tagItem.ID,
+		&tagItem.TagID,
+		&tagItem.ItemID,
+		&itemType,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errors.New("record not found")
+		}
+		return err
+	}
+
+	tagItem.ItemType = ItemType(itemType)
+
+	return nil
+}
+
+func (t TagItemModel) GetAll() ([]*TagItem, error) {
+	rows, err := t.Query.SetBaseTable("tagged_items").Select(
+		"id",
+		"tagId",
+		"itemId",
+		"itemType",
+	).Query()
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	tagItems := make([]*TagItem, 0)
+
+	for rows.Next() {
+		tagItem := &TagItem{}
+		var itemType string
+
+		if err := rows.Scan(
+			&tagItem.ID,
+			&tagItem.TagID,
+			&tagItem.ItemID,
+			&itemType,
+		); err != nil {
+			return nil, err
+		}
+
+		tagItem.ItemType = ItemType(itemType)
+		tagItems = append(tagItems, tagItem)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return tagItems, nil
+}
+
 func (t TagItemModel) RemoveTagFromItem(tagID, itemID int64, itemType ItemType) error {
 	if err := validateItemType(itemType); err != nil {
 		return err
