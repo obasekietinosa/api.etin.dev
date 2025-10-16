@@ -54,6 +54,10 @@ export WEBSITE_DB_DSN='postgres://website:etin@localhost/website?sslmode=disable
 export WEBSITE_ADMIN_EMAIL='admin@example.com' && \
 export WEBSITE_ADMIN_PASSWORD='super-secret-password' && \
 export WEBSITE_CORS_TRUSTED_ORIGINS='http://localhost:3000 https://admin.example.com' && \
+export WEBSITE_CLOUDINARY_CLOUD_NAME='your-cloud-name' && \
+export WEBSITE_CLOUDINARY_API_KEY='your-api-key' && \
+export WEBSITE_CLOUDINARY_API_SECRET='your-api-secret' && \
+export WEBSITE_CLOUDINARY_FOLDER='website-assets' && \
 go run ./cmd/api
 ```
 
@@ -73,6 +77,21 @@ curl -X POST http://localhost:4000/v1/admin/login \
 The JSON response contains the bearer token and expiry timestamp. Supply this token in the
 `Authorization` header when calling any create, update or delete endpoints. To invalidate the
 token, call `POST /v1/admin/logout` with the same header.
+
+### Asset storage pipeline
+
+Uploads are handled through Cloudinary. Set the following environment variables (or equivalent
+flags) so the API can initialise the uploader:
+
+* `WEBSITE_CLOUDINARY_CLOUD_NAME`
+* `WEBSITE_CLOUDINARY_API_KEY`
+* `WEBSITE_CLOUDINARY_API_SECRET`
+* `WEBSITE_CLOUDINARY_FOLDER` *(optional)*
+
+`internal/assets` wraps the Cloudinary SDK and exposes an `Uploader` interface so other packages
+can remain storage agnostic. Metadata about each upload is persisted to the `assets` table (see
+`internal/data/assets.go`) which unlocks future join tables for connecting images to notes,
+projects or roles.
 
 ### Tests
 Not a lot of tests yet, but hopefully changing soon. There are tests written for the `querybuilder` package. To run 
