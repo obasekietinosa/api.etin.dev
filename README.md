@@ -93,6 +93,10 @@ can remain storage agnostic. Metadata about each upload is persisted to the `ass
 `internal/data/assets.go`) which unlocks future join tables for connecting images to notes,
 projects or roles.
 
+When creating or updating a project (and future models that support rich images), the frontend
+should request an upload first, then include the resulting Cloudinary URL in the payload's optional
+`imageUrl` field.
+
 ### Tests
 Not a lot of tests yet, but hopefully changing soon. There are tests written for the `querybuilder` package. To run 
 these, run:

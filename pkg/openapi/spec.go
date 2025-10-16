@@ -226,6 +226,7 @@ func buildSchemas() map[string]any {
 				"endDate":     dateTimeSchema("Project end date. Omitted while the project is ongoing."),
 				"title":       stringSchema("Project title."),
 				"description": stringSchema("Project description."),
+				"imageUrl":    stringSchema("Public URL of the project's lead image."),
 			},
 		},
 		"CreateProjectRequest": map[string]any{
@@ -236,6 +237,7 @@ func buildSchemas() map[string]any {
 				"endDate":     dateTimeSchema("Project end date. Omitted while the project is ongoing."),
 				"title":       stringSchema("Project title."),
 				"description": stringSchema("Project description."),
+				"imageUrl":    stringSchema("Public URL of the project's lead image."),
 			},
 		},
 		"UpdateProjectRequest": map[string]any{
@@ -245,6 +247,7 @@ func buildSchemas() map[string]any {
 				"endDate":     dateTimeSchema("Project end date. Omitted while the project is ongoing."),
 				"title":       stringSchema("Project title."),
 				"description": stringSchema("Project description."),
+				"imageUrl":    stringSchema("Public URL of the project's lead image."),
 			},
 		},
 		"ProjectResponse": map[string]any{

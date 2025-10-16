@@ -30,6 +30,7 @@ func (app *application) getCreateProjectsHandler(w http.ResponseWriter, r *http.
 			EndDate     *time.Time `json:"endDate"`
 			Title       string     `json:"title"`
 			Description string     `json:"description"`
+			ImageURL    *string    `json:"imageUrl"`
 		}
 
 		err := app.readJSON(w, r, &input)
@@ -43,10 +44,8 @@ func (app *application) getCreateProjectsHandler(w http.ResponseWriter, r *http.
 			StartDate:   input.StartDate,
 			Title:       input.Title,
 			Description: input.Description,
-		}
-
-		if input.EndDate != nil {
-			project.EndDate = input.EndDate
+			EndDate:     input.EndDate,
+			ImageURL:    input.ImageURL,
 		}
 
 		err = app.models.Projects.Insert(project)
@@ -116,6 +115,7 @@ func (app *application) updateProject(w http.ResponseWriter, r *http.Request) {
 		EndDate     *time.Time `json:"endDate"`
 		Title       *string    `json:"title"`
 		Description *string    `json:"description"`
+		ImageURL    *string    `json:"imageUrl"`
 	}
 
 	err = app.readJSON(w, r, &input)
@@ -139,6 +139,10 @@ func (app *application) updateProject(w http.ResponseWriter, r *http.Request) {
 
 	if input.Description != nil {
 		project.Description = *input.Description
+	}
+
+	if input.ImageURL != nil {
+		project.ImageURL = input.ImageURL
 	}
 
 	err = app.models.Projects.Update(project)

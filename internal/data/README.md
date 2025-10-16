@@ -45,6 +45,7 @@ erDiagram
     date End_Date
     string Title
     text Description
+    string Image_URL
   }
 
   Tagged_Items {
@@ -120,7 +121,8 @@ CREATE TABLE IF NOT EXISTS projects (
   startDate timestamp(0) with time zone NOT NULL,
   endDate timestamp(0) with time zone,
   title text NOT NULL,
-  description text
+  description text,
+  imageUrl text
 );
 
 CREATE TABLE IF NOT EXISTS tags (
@@ -196,6 +198,16 @@ CREATE TABLE IF NOT EXISTS assets (
 -- );
 
 ```
+
+## Project image migration
+
+To extend the projects table with an optional image reference, run the following SQL against existing databases:
+
+```sql
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS imageUrl text;
+```
+
+Projects can now store the publicly accessible URL returned by the Cloudinary upload flow. Apply the same nullable column pattern to future content tables that need rich images.
 
 ## Notes table migration
 
