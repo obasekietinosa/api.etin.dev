@@ -36,12 +36,13 @@ type config struct {
 }
 
 type application struct {
-	config   config
-	logger   *log.Logger
-	models   data.Models
-	assets   assets.Uploader
-	swagger  []byte
-	sessions *sessionManager
+	config     config
+	logger     *log.Logger
+	models     data.Models
+	assetModel assetSaver
+	assets     assets.Uploader
+	swagger    []byte
+	sessions   *sessionManager
 }
 
 func main() {
@@ -111,13 +112,16 @@ func main() {
 		logger.Fatal(err)
 	}
 
+	models := data.NewModels(db)
+
 	app := &application{
-		config:   cfg,
-		logger:   logger,
-		models:   data.NewModels(db),
-		assets:   uploader,
-		swagger:  swaggerDoc,
-		sessions: newSessionManager(24 * time.Hour),
+		config:     cfg,
+		logger:     logger,
+		models:     models,
+		assetModel: models.Assets,
+		assets:     uploader,
+		swagger:    swaggerDoc,
+		sessions:   newSessionManager(24 * time.Hour),
 	}
 
 	addr := fmt.Sprintf(":%d", cfg.port)

@@ -435,6 +435,38 @@ func buildSchemas() map[string]any {
 				},
 			},
 		},
+		"Asset": map[string]any{
+			"type":     "object",
+			"required": []string{"id", "url", "secureUrl", "publicId", "format", "resourceType", "bytes", "width", "height"},
+			"properties": map[string]any{
+				"id":           int64Schema("Database identifier."),
+				"url":          stringSchema("Direct URL for the uploaded asset."),
+				"secureUrl":    stringSchema("HTTPS URL for the uploaded asset."),
+				"publicId":     stringSchema("Cloudinary public identifier."),
+				"format":       stringSchema("File format reported by Cloudinary."),
+				"resourceType": stringSchema("Asset resource type such as image or video."),
+				"bytes":        int64Schema("File size in bytes."),
+				"width":        map[string]any{"type": "integer", "description": "Pixel width when available."},
+				"height":       map[string]any{"type": "integer", "description": "Pixel height when available."},
+			},
+		},
+		"AssetUploadRequest": map[string]any{
+			"type":     "object",
+			"required": []string{"file"},
+			"properties": map[string]any{
+				"file": map[string]any{
+					"type":        "string",
+					"format":      "binary",
+					"description": "Binary payload of the asset to upload.",
+				},
+			},
+		},
+		"AssetUploadResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"asset": ref("Asset"),
+			},
+		},
 	}
 }
 
@@ -543,6 +575,30 @@ func buildPaths() map[string]any {
 				"responses": map[string]any{
 					"200": jsonResponse("Admin session revoked.", "AdminLogoutResponse"),
 					"401": noContent("Missing or invalid bearer token."),
+				},
+			},
+		},
+		"/v1/assets": map[string]any{
+			"post": map[string]any{
+				"operationId": "uploadAsset",
+				"summary":     "Upload a new asset",
+				"tags":        []string{"Assets"},
+				"security":    bearerSecurity,
+				"requestBody": map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"multipart/form-data": map[string]any{
+							"schema": ref("AssetUploadRequest"),
+						},
+					},
+				},
+				"responses": map[string]any{
+					"201": jsonResponse("Asset uploaded.", "AssetUploadResponse"),
+					"400": noContent("Invalid upload payload or missing file."),
+					"403": noContent("Missing or invalid bearer token."),
+					"413": noContent("Uploaded file exceeds the maximum allowed size."),
+					"500": noContent("Failed to persist asset metadata."),
+					"502": noContent("Failed to upload asset to storage provider."),
 				},
 			},
 		},
