@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"api.etin.dev/internal/assets"
 	"api.etin.dev/internal/data"
 	"api.etin.dev/pkg/openapi"
 	_ "github.com/lib/pq"
@@ -26,12 +27,19 @@ type config struct {
 	cors          struct {
 		trustedOrigins []string
 	}
+	cloudinary struct {
+		cloudName string
+		apiKey    string
+		apiSecret string
+		folder    string
+	}
 }
 
 type application struct {
 	config   config
 	logger   *log.Logger
 	models   data.Models
+	assets   assets.Uploader
 	swagger  []byte
 	sessions *sessionManager
 }
@@ -47,6 +55,10 @@ func main() {
 	flag.StringVar(&cfg.adminEmail, "admin-email", os.Getenv("WEBSITE_ADMIN_EMAIL"), "Admin login email")
 	flag.StringVar(&cfg.adminPassword, "admin-password", os.Getenv("WEBSITE_ADMIN_PASSWORD"), "Admin login password")
 	flag.StringVar(&corsTrustedOrigins, "cors-trusted-origins", os.Getenv("WEBSITE_CORS_TRUSTED_ORIGINS"), "Space separated list of trusted CORS origins")
+	flag.StringVar(&cfg.cloudinary.cloudName, "cloudinary-cloud-name", os.Getenv("WEBSITE_CLOUDINARY_CLOUD_NAME"), "Cloudinary cloud name")
+	flag.StringVar(&cfg.cloudinary.apiKey, "cloudinary-api-key", os.Getenv("WEBSITE_CLOUDINARY_API_KEY"), "Cloudinary API key")
+	flag.StringVar(&cfg.cloudinary.apiSecret, "cloudinary-api-secret", os.Getenv("WEBSITE_CLOUDINARY_API_SECRET"), "Cloudinary API secret")
+	flag.StringVar(&cfg.cloudinary.folder, "cloudinary-folder", os.Getenv("WEBSITE_CLOUDINARY_FOLDER"), "Optional Cloudinary folder for uploads")
 	flag.Parse()
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
@@ -64,6 +76,18 @@ func main() {
 		logger.Fatal("Admin credentials must be provided")
 	}
 
+	if cfg.cloudinary.cloudName == "" {
+		logger.Fatal("Cloudinary cloud name must be provided")
+	}
+
+	if cfg.cloudinary.apiKey == "" {
+		logger.Fatal("Cloudinary API key must be provided")
+	}
+
+	if cfg.cloudinary.apiSecret == "" {
+		logger.Fatal("Cloudinary API secret must be provided")
+	}
+
 	db, err := openDB(cfg.dsn)
 	if err != nil {
 		logger.Fatal(err)
@@ -71,6 +95,16 @@ func main() {
 	defer db.Close()
 
 	logger.Printf("database connection pool established")
+
+	uploader, err := assets.NewCloudinaryUploader(
+		cfg.cloudinary.cloudName,
+		cfg.cloudinary.apiKey,
+		cfg.cloudinary.apiSecret,
+		cfg.cloudinary.folder,
+	)
+	if err != nil {
+		logger.Fatal(err)
+	}
 
 	swaggerDoc, err := openapi.Build(version)
 	if err != nil {
@@ -81,6 +115,7 @@ func main() {
 		config:   cfg,
 		logger:   logger,
 		models:   data.NewModels(db),
+		assets:   uploader,
 		swagger:  swaggerDoc,
 		sessions: newSessionManager(24 * time.Hour),
 	}

@@ -70,6 +70,20 @@ erDiagram
   Tagged_Items }o--o| Notes : "Item_ID"
   Tagged_Items }o--o| Roles : "Item_ID"
   Item_Notes }|--o| Roles : "Note_ID"
+  Assets {
+    int ID PK
+    timestamp CreatedAt
+    timestamp UpdatedAt
+    timestamp DeletedAt
+    string URL
+    string SecureURL
+    string PublicID
+    string Format
+    string ResourceType
+    int Bytes
+    int Width
+    int Height
+  }
 ```
 
 # Schema
@@ -148,6 +162,39 @@ CREATE TABLE IF NOT EXISTS item_notes (
   itemType item_type NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS assets (
+  id bigserial PRIMARY KEY,
+  createdAt timestamp(0) with time zone NOT NULL DEFAULT NOW(),
+  updatedAt timestamp(0) with time zone NOT NULL DEFAULT NOW(),
+  deletedAt timestamp(0) with time zone,
+  url text NOT NULL,
+  secureUrl text NOT NULL,
+  publicId varchar(255) NOT NULL UNIQUE,
+  format varchar(255) NOT NULL,
+  resourceType varchar(255) NOT NULL,
+  bytes bigint NOT NULL,
+  width integer NOT NULL,
+  height integer NOT NULL
+);
+
+-- Future join tables can link assets to content specific records.
+-- Examples are provided below for when the relationships are required:
+-- CREATE TABLE IF NOT EXISTS note_assets (
+--   noteId bigint NOT NULL REFERENCES notes(id),
+--   assetId bigint NOT NULL REFERENCES assets(id),
+--   PRIMARY KEY (noteId, assetId)
+-- );
+-- CREATE TABLE IF NOT EXISTS project_assets (
+--   projectId bigint NOT NULL REFERENCES projects(id),
+--   assetId bigint NOT NULL REFERENCES assets(id),
+--   PRIMARY KEY (projectId, assetId)
+-- );
+-- CREATE TABLE IF NOT EXISTS role_assets (
+--   roleId bigint NOT NULL REFERENCES roles(id),
+--   assetId bigint NOT NULL REFERENCES assets(id),
+--   PRIMARY KEY (roleId, assetId)
+-- );
+
 ```
 
 ## Notes table migration
@@ -165,4 +212,27 @@ CREATE TABLE IF NOT EXISTS notes (
   subtitle text,
   body text
 );
+```
+
+## Assets table migration
+
+To introduce the asset storage table, run the following SQL against existing databases:
+
+```sql
+CREATE TABLE IF NOT EXISTS assets (
+  id bigserial PRIMARY KEY,
+  createdAt timestamp(0) with time zone NOT NULL DEFAULT NOW(),
+  updatedAt timestamp(0) with time zone NOT NULL DEFAULT NOW(),
+  deletedAt timestamp(0) with time zone,
+  url text NOT NULL,
+  secureUrl text NOT NULL,
+  publicId varchar(255) NOT NULL UNIQUE,
+  format varchar(255) NOT NULL,
+  resourceType varchar(255) NOT NULL,
+  bytes bigint NOT NULL,
+  width integer NOT NULL,
+  height integer NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS assets_publicId_idx ON assets(publicId);
 ```
