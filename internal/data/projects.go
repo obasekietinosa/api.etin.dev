@@ -17,6 +17,7 @@ type Project struct {
 	EndDate     *time.Time `json:"endDate,omitempty"`
 	Title       string     `json:"title"`
 	Description string     `json:"description"`
+	ImageURL    *string    `json:"imageUrl,omitempty"`
 }
 
 type ProjectModel struct {
@@ -30,11 +31,17 @@ func (p ProjectModel) Insert(project *Project) error {
 		endDate = *project.EndDate
 	}
 
+	var imageURL interface{}
+	if project.ImageURL != nil {
+		imageURL = *project.ImageURL
+	}
+
 	values := querybuilder.Clauses{
 		{ColumnName: "startDate", Value: project.StartDate},
 		{ColumnName: "endDate", Value: endDate},
 		{ColumnName: "title", Value: project.Title},
 		{ColumnName: "description", Value: project.Description},
+		{ColumnName: "imageUrl", Value: imageURL},
 	}
 
 	row, err := p.Query.SetBaseTable("projects").Insert(values).Returning(
@@ -46,6 +53,7 @@ func (p ProjectModel) Insert(project *Project) error {
 		"endDate",
 		"title",
 		"description",
+		"imageUrl",
 	).QueryRow()
 	if err != nil {
 		return err
@@ -53,6 +61,7 @@ func (p ProjectModel) Insert(project *Project) error {
 
 	var deletedAt sql.NullTime
 	var savedEndDate sql.NullTime
+	var savedImageURL sql.NullString
 
 	err = row.Scan(
 		&project.ID,
@@ -63,6 +72,7 @@ func (p ProjectModel) Insert(project *Project) error {
 		&savedEndDate,
 		&project.Title,
 		&project.Description,
+		&savedImageURL,
 	)
 	if err != nil {
 		return err
@@ -78,6 +88,12 @@ func (p ProjectModel) Insert(project *Project) error {
 		project.EndDate = &savedEndDate.Time
 	} else {
 		project.EndDate = nil
+	}
+
+	if savedImageURL.Valid {
+		project.ImageURL = &savedImageURL.String
+	} else {
+		project.ImageURL = nil
 	}
 
 	return nil
@@ -97,6 +113,7 @@ func (p ProjectModel) Get(projectID int64) (*Project, error) {
 		"endDate",
 		"title",
 		"description",
+		"imageUrl",
 	).WhereEqual("deletedAt", nil).WhereEqual("id", projectID).QueryRow()
 	if err != nil {
 		return nil, err
@@ -105,6 +122,7 @@ func (p ProjectModel) Get(projectID int64) (*Project, error) {
 	var project Project
 	var deletedAt sql.NullTime
 	var endDate sql.NullTime
+	var imageURL sql.NullString
 
 	err = row.Scan(
 		&project.ID,
@@ -115,6 +133,7 @@ func (p ProjectModel) Get(projectID int64) (*Project, error) {
 		&endDate,
 		&project.Title,
 		&project.Description,
+		&imageURL,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -131,6 +150,10 @@ func (p ProjectModel) Get(projectID int64) (*Project, error) {
 		project.EndDate = &endDate.Time
 	}
 
+	if imageURL.Valid {
+		project.ImageURL = &imageURL.String
+	}
+
 	return &project, nil
 }
 
@@ -140,11 +163,17 @@ func (p ProjectModel) Update(project *Project) error {
 		endDate = *project.EndDate
 	}
 
+	var imageURL interface{}
+	if project.ImageURL != nil {
+		imageURL = *project.ImageURL
+	}
+
 	values := querybuilder.Clauses{
 		{ColumnName: "startDate", Value: project.StartDate},
 		{ColumnName: "endDate", Value: endDate},
 		{ColumnName: "title", Value: project.Title},
 		{ColumnName: "description", Value: project.Description},
+		{ColumnName: "imageUrl", Value: imageURL},
 		{ColumnName: "updatedAt", Value: time.Now()},
 	}
 
@@ -157,6 +186,7 @@ func (p ProjectModel) Update(project *Project) error {
 		"endDate",
 		"title",
 		"description",
+		"imageUrl",
 	).QueryRow()
 	if err != nil {
 		return err
@@ -164,6 +194,7 @@ func (p ProjectModel) Update(project *Project) error {
 
 	var deletedAt sql.NullTime
 	var savedEndDate sql.NullTime
+	var savedImageURL sql.NullString
 
 	err = row.Scan(
 		&project.ID,
@@ -174,6 +205,7 @@ func (p ProjectModel) Update(project *Project) error {
 		&savedEndDate,
 		&project.Title,
 		&project.Description,
+		&savedImageURL,
 	)
 	if err != nil {
 		return err
@@ -189,6 +221,12 @@ func (p ProjectModel) Update(project *Project) error {
 		project.EndDate = &savedEndDate.Time
 	} else {
 		project.EndDate = nil
+	}
+
+	if savedImageURL.Valid {
+		project.ImageURL = &savedImageURL.String
+	} else {
+		project.ImageURL = nil
 	}
 
 	return nil
@@ -231,6 +269,7 @@ func (p ProjectModel) GetAll() ([]*Project, error) {
 		"endDate",
 		"title",
 		"description",
+		"imageUrl",
 	).WhereEqual("deletedAt", nil).OrderBy("startDate", "desc").Query()
 	if err != nil {
 		return nil, err
@@ -244,6 +283,7 @@ func (p ProjectModel) GetAll() ([]*Project, error) {
 		var project Project
 		var deletedAt sql.NullTime
 		var endDate sql.NullTime
+		var imageURL sql.NullString
 
 		err := rows.Scan(
 			&project.ID,
@@ -254,6 +294,7 @@ func (p ProjectModel) GetAll() ([]*Project, error) {
 			&endDate,
 			&project.Title,
 			&project.Description,
+			&imageURL,
 		)
 		if err != nil {
 			return nil, err
@@ -265,6 +306,10 @@ func (p ProjectModel) GetAll() ([]*Project, error) {
 
 		if endDate.Valid {
 			project.EndDate = &endDate.Time
+		}
+
+		if imageURL.Valid {
+			project.ImageURL = &imageURL.String
 		}
 
 		projects = append(projects, &project)
