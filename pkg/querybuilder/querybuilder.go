@@ -146,9 +146,17 @@ func (q *QueryBuilder) buildConditionalStatement(conditions Clauses) string {
 func (q *QueryBuilder) buildParameters(parameters Clauses) []interface{} {
 	values := make([]interface{}, 0, len(parameters))
 	for _, clause := range parameters {
-		if clause.Value != "" {
-			values = append(values, clause.Value)
+		if strings.Contains(clause.ColumnName, ":") {
+			parts := strings.SplitN(clause.ColumnName, ":", 2)
+			if len(parts) == 2 {
+				comparer := parts[1]
+				if comparer == "IS NULL" || comparer == "IS NOT NULL" {
+					continue
+				}
+			}
 		}
+
+		values = append(values, clause.Value)
 	}
 	return values
 }
