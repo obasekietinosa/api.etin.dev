@@ -105,6 +105,22 @@ func TestBuildParameters(t *testing.T) {
 	}
 }
 
+func TestBuildParameters_SkipsNullComparisons(t *testing.T) {
+	qb := QueryBuilder{}
+	parameters := Clauses{
+		{ColumnName: "deleted_at:IS NULL"},
+		{ColumnName: "category:=", Value: "admin"},
+		{ColumnName: "archived_at:IS NOT NULL"},
+	}
+
+	params := qb.buildParameters(parameters)
+
+	expectedParams := []interface{}{"admin"}
+	if !reflect.DeepEqual(params, expectedParams) {
+		t.Errorf("Expected parameters to be %v, got %v", expectedParams, params)
+	}
+}
+
 func TestBuildReturnedColumns(t *testing.T) {
 	qb := QueryBuilder{}
 	fields := []string{"id", "name", "email"}
