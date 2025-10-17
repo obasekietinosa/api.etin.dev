@@ -91,8 +91,8 @@ func (q *SelectQueryBuilder) Query() (*sql.Rows, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(q.conditions) > 0 {
-		values := q.queryBuilder.buildParameters(q.conditions)
+	values := q.buildPreparedStatementValues()
+	if len(values) > 0 {
 		return q.queryBuilder.DB.Query(*query, values...)
 	}
 	return q.queryBuilder.DB.Query(*query)
