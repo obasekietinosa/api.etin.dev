@@ -73,6 +73,14 @@ func buildSchemas() map[string]any {
 		return schema
 	}
 
+	boolSchema := func(description string) map[string]any {
+		schema := map[string]any{"type": "boolean"}
+		if description != "" {
+			schema["description"] = description
+		}
+		return schema
+	}
+
 	ref := func(name string) map[string]any {
 		return map[string]any{"$ref": "#/components/schemas/" + name}
 	}
@@ -282,6 +290,114 @@ func buildSchemas() map[string]any {
 				"tags": map[string]any{
 					"type":  "array",
 					"items": ref("Tag"),
+				},
+			},
+		},
+		"PublicTag": map[string]any{
+			"type":     "object",
+			"required": []string{"id", "name", "slug"},
+			"properties": map[string]any{
+				"id":    int64Schema("Tag identifier."),
+				"name":  stringSchema("Tag display name."),
+				"slug":  stringSchema("URL-friendly tag slug."),
+				"icon":  stringSchema("Optional emoji or icon representing the tag."),
+				"theme": stringSchema("Optional theme associated with the tag."),
+			},
+		},
+		"PublicNote": map[string]any{
+			"type":     "object",
+			"required": []string{"id", "publishedAt", "title", "preview", "body", "isFeatured", "tags"},
+			"properties": map[string]any{
+				"id":          int64Schema("Note identifier."),
+				"publishedAt": stringSchema("ISO 8601 timestamp when the note was published. Empty when unpublished."),
+				"title":       stringSchema("Note title."),
+				"preview":     stringSchema("Short preview extracted from the note body."),
+				"body":        stringSchema("Full note body in Markdown."),
+				"isFeatured":  boolSchema("Indicates whether the note is featured."),
+				"tags": map[string]any{
+					"type":  "array",
+					"items": ref("PublicTag"),
+				},
+			},
+		},
+		"PublicProject": map[string]any{
+			"type":     "object",
+			"required": []string{"id", "startDate", "title", "image", "slug", "description", "technologies"},
+			"properties": map[string]any{
+				"id":        int64Schema("Project identifier."),
+				"startDate": dateTimeSchema("Project start date."),
+				"endDate": func() map[string]any {
+					schema := dateTimeSchema("Project end date. Null while the project is ongoing.")
+					schema["nullable"] = true
+					return schema
+				}(),
+				"title": stringSchema("Project title."),
+				"image": stringSchema("Lead image URL for the project."),
+				"slug":  stringSchema("URL-friendly project slug."),
+				"status": func() map[string]any {
+					schema := ref("PublicTag")
+					schema["nullable"] = true
+					schema["description"] = "Status tag assigned to the project."
+					return schema
+				}(),
+				"description": stringSchema("Project description in Markdown."),
+				"technologies": map[string]any{
+					"type":  "array",
+					"items": stringSchema("Technology associated with the project."),
+				},
+			},
+		},
+		"PublicRole": map[string]any{
+			"type":     "object",
+			"required": []string{"roleId", "startDate", "title", "company", "companyIcon", "slug", "description", "skills"},
+			"properties": map[string]any{
+				"roleId":    int64Schema("Role identifier."),
+				"startDate": dateTimeSchema("Role start date."),
+				"endDate": func() map[string]any {
+					schema := dateTimeSchema("Role end date. Null while the role is ongoing.")
+					schema["nullable"] = true
+					return schema
+				}(),
+				"title": stringSchema("Role title."),
+				"subtitle": func() map[string]any {
+					schema := stringSchema("Optional subtitle providing additional context.")
+					schema["nullable"] = true
+					return schema
+				}(),
+				"company":     stringSchema("Company name."),
+				"companyIcon": stringSchema("Company icon URL or emoji."),
+				"slug":        stringSchema("URL-friendly role slug."),
+				"description": stringSchema("Role description in Markdown."),
+				"skills": map[string]any{
+					"type":  "array",
+					"items": stringSchema("Skill associated with the role."),
+				},
+			},
+		},
+		"PublicNotesResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"notes": map[string]any{
+					"type":  "array",
+					"items": ref("PublicNote"),
+				},
+			},
+		},
+		"PublicProjectsResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"projects": map[string]any{
+					"type":  "array",
+					"items": ref("PublicProject"),
+				},
+			},
+		},
+		"PublicRolesResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"roles": map[string]any{
+					"type":  "array",
+					"items": ref("PublicRole"),
 				},
 			},
 		},
@@ -546,6 +662,39 @@ func buildPaths() map[string]any {
 							},
 						},
 					},
+				},
+			},
+		},
+		"/public/v1/notes": map[string]any{
+			"get": map[string]any{
+				"operationId": "listPublicNotes",
+				"summary":     "List public notes",
+				"tags":        []string{"Public Content"},
+				"responses": map[string]any{
+					"200": jsonResponse("Public notes retrieved.", "PublicNotesResponse"),
+					"500": noContent("Server error retrieving public notes."),
+				},
+			},
+		},
+		"/public/v1/projects": map[string]any{
+			"get": map[string]any{
+				"operationId": "listPublicProjects",
+				"summary":     "List public projects",
+				"tags":        []string{"Public Content"},
+				"responses": map[string]any{
+					"200": jsonResponse("Public projects retrieved.", "PublicProjectsResponse"),
+					"500": noContent("Server error retrieving public projects."),
+				},
+			},
+		},
+		"/public/v1/roles": map[string]any{
+			"get": map[string]any{
+				"operationId": "listPublicRoles",
+				"summary":     "List public roles",
+				"tags":        []string{"Public Content"},
+				"responses": map[string]any{
+					"200": jsonResponse("Public roles retrieved.", "PublicRolesResponse"),
+					"500": noContent("Server error retrieving public roles."),
 				},
 			},
 		},

@@ -532,6 +532,236 @@
         },
         "type": "object"
       },
+      "PublicNote": {
+        "properties": {
+          "body": {
+            "description": "Full note body in Markdown.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Note identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "isFeatured": {
+            "description": "Indicates whether the note is featured.",
+            "type": "boolean"
+          },
+          "preview": {
+            "description": "Short preview extracted from the note body.",
+            "type": "string"
+          },
+          "publishedAt": {
+            "description": "ISO 8601 timestamp when the note was published. Empty when unpublished.",
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "$ref": "#/components/schemas/PublicTag"
+            },
+            "type": "array"
+          },
+          "title": {
+            "description": "Note title.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "publishedAt",
+          "title",
+          "preview",
+          "body",
+          "isFeatured",
+          "tags"
+        ],
+        "type": "object"
+      },
+      "PublicNotesResponse": {
+        "properties": {
+          "notes": {
+            "items": {
+              "$ref": "#/components/schemas/PublicNote"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "PublicProject": {
+        "properties": {
+          "description": {
+            "description": "Project description in Markdown.",
+            "type": "string"
+          },
+          "endDate": {
+            "description": "Project end date. Null while the project is ongoing.",
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "description": "Project identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "image": {
+            "description": "Lead image URL for the project.",
+            "type": "string"
+          },
+          "slug": {
+            "description": "URL-friendly project slug.",
+            "type": "string"
+          },
+          "startDate": {
+            "description": "Project start date.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PublicTag",
+            "description": "Status tag assigned to the project.",
+            "nullable": true
+          },
+          "technologies": {
+            "items": {
+              "description": "Technology associated with the project.",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": {
+            "description": "Project title.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "startDate",
+          "title",
+          "image",
+          "slug",
+          "description",
+          "technologies"
+        ],
+        "type": "object"
+      },
+      "PublicProjectsResponse": {
+        "properties": {
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/PublicProject"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "PublicRole": {
+        "properties": {
+          "company": {
+            "description": "Company name.",
+            "type": "string"
+          },
+          "companyIcon": {
+            "description": "Company icon URL or emoji.",
+            "type": "string"
+          },
+          "description": {
+            "description": "Role description in Markdown.",
+            "type": "string"
+          },
+          "endDate": {
+            "description": "Role end date. Null while the role is ongoing.",
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "roleId": {
+            "description": "Role identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "skills": {
+            "items": {
+              "description": "Skill associated with the role.",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "slug": {
+            "description": "URL-friendly role slug.",
+            "type": "string"
+          },
+          "startDate": {
+            "description": "Role start date.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "subtitle": {
+            "description": "Optional subtitle providing additional context.",
+            "nullable": true,
+            "type": "string"
+          },
+          "title": {
+            "description": "Role title.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "roleId",
+          "startDate",
+          "title",
+          "company",
+          "companyIcon",
+          "slug",
+          "description",
+          "skills"
+        ],
+        "type": "object"
+      },
+      "PublicRolesResponse": {
+        "properties": {
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/PublicRole"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "PublicTag": {
+        "properties": {
+          "icon": {
+            "description": "Optional emoji or icon representing the tag.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Tag identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "description": "Tag display name.",
+            "type": "string"
+          },
+          "slug": {
+            "description": "URL-friendly tag slug.",
+            "type": "string"
+          },
+          "theme": {
+            "description": "Optional theme associated with the tag.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ],
+        "type": "object"
+      },
       "Role": {
         "properties": {
           "company": {
@@ -886,6 +1116,78 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/public/v1/notes": {
+      "get": {
+        "operationId": "listPublicNotes",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicNotesResponse"
+                }
+              }
+            },
+            "description": "Public notes retrieved."
+          },
+          "500": {
+            "description": "Server error retrieving public notes."
+          }
+        },
+        "summary": "List public notes",
+        "tags": [
+          "Public Content"
+        ]
+      }
+    },
+    "/public/v1/projects": {
+      "get": {
+        "operationId": "listPublicProjects",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProjectsResponse"
+                }
+              }
+            },
+            "description": "Public projects retrieved."
+          },
+          "500": {
+            "description": "Server error retrieving public projects."
+          }
+        },
+        "summary": "List public projects",
+        "tags": [
+          "Public Content"
+        ]
+      }
+    },
+    "/public/v1/roles": {
+      "get": {
+        "operationId": "listPublicRoles",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicRolesResponse"
+                }
+              }
+            },
+            "description": "Public roles retrieved."
+          },
+          "500": {
+            "description": "Server error retrieving public roles."
+          }
+        },
+        "summary": "List public roles",
+        "tags": [
+          "Public Content"
+        ]
+      }
+    },
     "/swagger": {
       "get": {
         "operationId": "getSwaggerDocument",
