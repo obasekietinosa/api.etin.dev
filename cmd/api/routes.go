@@ -6,13 +6,16 @@ func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/swagger", app.swaggerHandler)
-        mux.HandleFunc("/v1/healthcheck", app.healthcheck)
-        mux.HandleFunc("/v1/admin/login", app.adminLoginHandler)
-        mux.HandleFunc("/v1/admin/logout", app.adminLogoutHandler)
+	mux.HandleFunc("/public/v1/notes", app.getPublicNotesHandler)
+	mux.HandleFunc("/public/v1/projects", app.getPublicProjectsHandler)
+	mux.HandleFunc("/public/v1/roles", app.getPublicRolesHandler)
+	mux.HandleFunc("/v1/healthcheck", app.healthcheck)
+	mux.HandleFunc("/v1/admin/login", app.adminLoginHandler)
+	mux.HandleFunc("/v1/admin/logout", app.adminLogoutHandler)
 
-        mux.HandleFunc("/v1/assets", app.getCreateAssetsHandler)
+	mux.HandleFunc("/v1/assets", app.getCreateAssetsHandler)
 
-        mux.HandleFunc("/v1/roles", app.getCreateRolesHandler)
+	mux.HandleFunc("/v1/roles", app.getCreateRolesHandler)
 	mux.HandleFunc("/v1/roles/", app.getUpdateDeleteRolesHandler)
 
 	mux.HandleFunc("/v1/companies", app.getCreateCompaniesHandler)
