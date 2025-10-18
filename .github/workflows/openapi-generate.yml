@@ -1,0 +1,178 @@
+name: Generate OpenAPI specification
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  generate:
+    if: github.event.issue.pull_request != null
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check comment trigger
+        id: trigger
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        run: |
+          body_lower=$(echo "$COMMENT_BODY" | tr '[:upper:]' '[:lower:]')
+          if [[ "$body_lower" == *"generate openapi spec"* ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Acknowledge non-matching comment
+        if: steps.trigger.outputs.run != 'true'
+        run: echo "Comment does not request OpenAPI generation."
+
+      - name: Fetch pull request metadata
+        if: steps.trigger.outputs.run == 'true'
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            core.setOutput('head_ref', pr.data.head.ref);
+            core.setOutput('head_repo', pr.data.head.repo.full_name);
+            core.setOutput('is_fork', pr.data.head.repo.fork ? 'true' : 'false');
+
+      - name: Comment for forked pull request
+        if: steps.trigger.outputs.run == 'true' && steps.pr.outputs.is_fork == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- openapi-generate -->';
+            const body = `${marker}
+Unable to update the OpenAPI document automatically for pull requests from forks.
+
+Please run go run ./cmd/openapi -output cmd/api/openapi.json locally and push the result.`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            const existing = comments.find(comment => comment.body && comment.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Check out pull request head
+        if: steps.trigger.outputs.run == 'true' && steps.pr.outputs.is_fork != 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.pr.outputs.head_repo }}
+          ref: ${{ steps.pr.outputs.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Set up Go
+        if: steps.trigger.outputs.run == 'true' && steps.pr.outputs.is_fork != 'true'
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Regenerate OpenAPI document
+        if: steps.trigger.outputs.run == 'true' && steps.pr.outputs.is_fork != 'true'
+        run: go run ./cmd/openapi -output cmd/api/openapi.json
+
+      - name: Detect spec updates
+        if: steps.trigger.outputs.run == 'true' && steps.pr.outputs.is_fork != 'true'
+        id: changes
+        run: |
+          if git diff --quiet -- cmd/api/openapi.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit specification changes
+        if: steps.trigger.outputs.run == 'true' && steps.pr.outputs.is_fork != 'true' && steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add cmd/api/openapi.json
+          git commit -m "chore: update OpenAPI spec"
+          git push
+
+      - name: Comment after update
+        if: steps.trigger.outputs.run == 'true' && steps.pr.outputs.is_fork != 'true' && steps.changes.outputs.changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- openapi-generate -->';
+            const body = `${marker}
+The OpenAPI document has been regenerated and pushed to this branch.`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            const existing = comments.find(comment => comment.body && comment.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Comment when no changes detected
+        if: steps.trigger.outputs.run == 'true' && steps.pr.outputs.is_fork != 'true' && steps.changes.outputs.changed != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- openapi-generate -->';
+            const body = `${marker}
+The OpenAPI document was already up to date.`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            const existing = comments.find(comment => comment.body && comment.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

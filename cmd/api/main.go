@@ -12,11 +12,8 @@ import (
 
 	"api.etin.dev/internal/assets"
 	"api.etin.dev/internal/data"
-	"api.etin.dev/pkg/openapi"
 	_ "github.com/lib/pq"
 )
-
-const version = "1.0.0"
 
 type config struct {
 	port          int
@@ -107,11 +104,6 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	swaggerDoc, err := openapi.Build(version)
-	if err != nil {
-		logger.Fatal(err)
-	}
-
 	models := data.NewModels(db)
 
 	app := &application{
@@ -120,7 +112,7 @@ func main() {
 		models:     models,
 		assetModel: models.Assets,
 		assets:     uploader,
-		swagger:    swaggerDoc,
+		swagger:    embeddedSwagger,
 		sessions:   newSessionManager(24 * time.Hour),
 	}
 
