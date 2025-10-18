@@ -1,12 +1,12 @@
 name: Validate OpenAPI specification
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   contents: read
-  pull-requests: write
+  issues: write
 
 jobs:
   validate:
@@ -15,6 +15,13 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check out pull request head
+        run: |
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr
+          git checkout pr
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -22,6 +29,8 @@ jobs:
           go-version-file: go.mod
 
       - name: Generate OpenAPI document
+        env:
+          GITHUB_TOKEN: ""
         run: go run ./cmd/openapi -output cmd/api/openapi.json
 
       - name: Detect changes
@@ -44,10 +53,11 @@ jobs:
 The generated OpenAPI document does not match the committed version.
 
 Run go run ./cmd/openapi -output cmd/api/openapi.json and commit the result, or comment "generate openapi spec" to have CI update it for you.`;
+            const prNumber = context.payload.pull_request.number;
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.issue.number,
+              issue_number: prNumber,
               per_page: 100,
             });
             const existing = comments.find(comment => comment.body && comment.body.includes(marker));
@@ -62,7 +72,7 @@ Run go run ./cmd/openapi -output cmd/api/openapi.json and commit the result, or 
               await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                issue_number: context.issue.number,
+                issue_number: prNumber,
                 body,
               });
             }
