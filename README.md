@@ -98,9 +98,21 @@ should request an upload first, then include the resulting Cloudinary URL in the
 `imageUrl` field.
 
 ### Tests
-Not a lot of tests yet, but hopefully changing soon. There are tests written for the `querybuilder` package. To run 
+Not a lot of tests yet, but hopefully changing soon. There are tests written for the `querybuilder` package. To run
 these, run:
 
 ```bash
 go test -timeout 30s api.etin.dev/pkg/querybuilder
 ```
+
+### OpenAPI specification
+The `/swagger` endpoint serves a generated OpenAPI document embedded in the binary. To regenerate the specification after
+changing handlers or schemas, run:
+
+```bash
+go run ./cmd/openapi
+```
+
+This command rewrites `cmd/api/openapi.json`. Commit the updated file to keep the embedded schema in sync. Pull requests
+automatically verify that the committed document matches the generated output, and you can comment “generate openapi spec” on
+an open PR to trigger CI to regenerate and push the latest document for you.

@@ -1,0 +1,2354 @@
+{
+  "components": {
+    "schemas": {
+      "AdminLoginRequest": {
+        "properties": {
+          "email": {
+            "description": "Admin email address.",
+            "type": "string"
+          },
+          "password": {
+            "description": "Admin password.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
+      "AdminLoginResponse": {
+        "properties": {
+          "expiresAt": {
+            "description": "Timestamp when the session token expires.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "token": {
+            "description": "Bearer token used to authenticate administrative requests.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "expiresAt"
+        ],
+        "type": "object"
+      },
+      "AdminLogoutResponse": {
+        "properties": {
+          "message": {
+            "description": "Confirmation message.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Asset": {
+        "properties": {
+          "bytes": {
+            "description": "File size in bytes.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "format": {
+            "description": "File format reported by Cloudinary.",
+            "type": "string"
+          },
+          "height": {
+            "description": "Pixel height when available.",
+            "type": "integer"
+          },
+          "id": {
+            "description": "Database identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "publicId": {
+            "description": "Cloudinary public identifier.",
+            "type": "string"
+          },
+          "resourceType": {
+            "description": "Asset resource type such as image or video.",
+            "type": "string"
+          },
+          "secureUrl": {
+            "description": "HTTPS URL for the uploaded asset.",
+            "type": "string"
+          },
+          "url": {
+            "description": "Direct URL for the uploaded asset.",
+            "type": "string"
+          },
+          "width": {
+            "description": "Pixel width when available.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "secureUrl",
+          "publicId",
+          "format",
+          "resourceType",
+          "bytes",
+          "width",
+          "height"
+        ],
+        "type": "object"
+      },
+      "AssetUploadRequest": {
+        "properties": {
+          "file": {
+            "description": "Binary payload of the asset to upload.",
+            "format": "binary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "type": "object"
+      },
+      "AssetUploadResponse": {
+        "properties": {
+          "asset": {
+            "$ref": "#/components/schemas/Asset"
+          }
+        },
+        "type": "object"
+      },
+      "CompaniesResponse": {
+        "properties": {
+          "companies": {
+            "items": {
+              "$ref": "#/components/schemas/Company"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "Company": {
+        "properties": {
+          "description": {
+            "description": "Markdown description for the company.",
+            "type": "string"
+          },
+          "icon": {
+            "description": "Icon URL for the company.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Database identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "description": "Company display name.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "icon",
+          "description"
+        ],
+        "type": "object"
+      },
+      "CompanyRequest": {
+        "properties": {
+          "description": {
+            "description": "Markdown description for the company.",
+            "type": "string"
+          },
+          "icon": {
+            "description": "Icon URL for the company.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Company display name.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "CompanyResponse": {
+        "properties": {
+          "company": {
+            "$ref": "#/components/schemas/Company"
+          }
+        },
+        "type": "object"
+      },
+      "CreateItemNoteRequest": {
+        "properties": {
+          "itemId": {
+            "description": "Linked item identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "itemType": {
+            "description": "Type of item linked to the note.",
+            "enum": [
+              "notes",
+              "roles",
+              "projects"
+            ],
+            "type": "string"
+          },
+          "noteId": {
+            "description": "Linked note identifier.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "noteId",
+          "itemId",
+          "itemType"
+        ],
+        "type": "object"
+      },
+      "CreateNoteRequest": {
+        "properties": {
+          "body": {
+            "description": "Note body in Markdown.",
+            "type": "string"
+          },
+          "publishedAt": {
+            "description": "Publication timestamp.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "subtitle": {
+            "description": "Note subtitle.",
+            "type": "string"
+          },
+          "title": {
+            "description": "Note title.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "type": "object"
+      },
+      "CreateProjectRequest": {
+        "properties": {
+          "description": {
+            "description": "Project description.",
+            "type": "string"
+          },
+          "endDate": {
+            "description": "Project end date. Omitted while the project is ongoing.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "imageUrl": {
+            "description": "Public URL of the project's lead image.",
+            "type": "string"
+          },
+          "startDate": {
+            "description": "Project start date.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "description": "Project title.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "startDate",
+          "title",
+          "description"
+        ],
+        "type": "object"
+      },
+      "CreateRoleRequest": {
+        "properties": {
+          "companyId": {
+            "description": "Identifier for the related company.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "description": {
+            "description": "Markdown description of responsibilities.",
+            "type": "string"
+          },
+          "endDate": {
+            "description": "Employment end date. Zero timestamp indicates an ongoing role.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "skills": {
+            "items": {
+              "description": "Skill associated with the role.",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "startDate": {
+            "description": "Employment start date.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "subtitle": {
+            "description": "Role subtitle.",
+            "type": "string"
+          },
+          "title": {
+            "description": "Role title.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "startDate",
+          "title",
+          "companyId",
+          "skills"
+        ],
+        "type": "object"
+      },
+      "CreateTagItemRequest": {
+        "properties": {
+          "itemId": {
+            "description": "Linked item identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "itemType": {
+            "description": "Type of item linked to the tag.",
+            "enum": [
+              "notes",
+              "roles",
+              "projects"
+            ],
+            "type": "string"
+          },
+          "tagId": {
+            "description": "Linked tag identifier.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tagId",
+          "itemId",
+          "itemType"
+        ],
+        "type": "object"
+      },
+      "HealthcheckResponse": {
+        "properties": {
+          "environment": {
+            "description": "Deployment environment for the running service.",
+            "type": "string"
+          },
+          "status": {
+            "description": "Service availability status.",
+            "type": "string"
+          },
+          "version": {
+            "description": "Semantic version of the running service.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "environment",
+          "version"
+        ],
+        "type": "object"
+      },
+      "ItemNote": {
+        "properties": {
+          "id": {
+            "description": "Database identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "itemId": {
+            "description": "Linked item identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "itemType": {
+            "description": "Type of item linked to the note.",
+            "enum": [
+              "notes",
+              "roles",
+              "projects"
+            ],
+            "type": "string"
+          },
+          "noteId": {
+            "description": "Linked note identifier.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "noteId",
+          "itemId",
+          "itemType"
+        ],
+        "type": "object"
+      },
+      "ItemNoteResponse": {
+        "properties": {
+          "itemNote": {
+            "$ref": "#/components/schemas/ItemNote"
+          }
+        },
+        "type": "object"
+      },
+      "ItemNotesResponse": {
+        "properties": {
+          "itemNotes": {
+            "items": {
+              "$ref": "#/components/schemas/ItemNote"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "Note": {
+        "properties": {
+          "body": {
+            "description": "Note body in Markdown.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Database identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "publishedAt": {
+            "description": "Publication timestamp.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "subtitle": {
+            "description": "Note subtitle.",
+            "type": "string"
+          },
+          "title": {
+            "description": "Note title.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "subtitle",
+          "body"
+        ],
+        "type": "object"
+      },
+      "NoteResponse": {
+        "properties": {
+          "note": {
+            "$ref": "#/components/schemas/Note"
+          }
+        },
+        "type": "object"
+      },
+      "NotesResponse": {
+        "properties": {
+          "notes": {
+            "items": {
+              "$ref": "#/components/schemas/Note"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "Project": {
+        "properties": {
+          "description": {
+            "description": "Project description.",
+            "type": "string"
+          },
+          "endDate": {
+            "description": "Project end date. Omitted while the project is ongoing.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "description": "Database identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "imageUrl": {
+            "description": "Public URL of the project's lead image.",
+            "type": "string"
+          },
+          "startDate": {
+            "description": "Project start date.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "description": "Project title.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "startDate",
+          "title",
+          "description"
+        ],
+        "type": "object"
+      },
+      "ProjectResponse": {
+        "properties": {
+          "project": {
+            "$ref": "#/components/schemas/Project"
+          }
+        },
+        "type": "object"
+      },
+      "ProjectsResponse": {
+        "properties": {
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/Project"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "Role": {
+        "properties": {
+          "company": {
+            "description": "Resolved company name.",
+            "type": "string"
+          },
+          "companyIcon": {
+            "description": "Resolved company icon.",
+            "type": "string"
+          },
+          "companyId": {
+            "description": "Identifier for the related company.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "description": {
+            "description": "Markdown description of responsibilities.",
+            "type": "string"
+          },
+          "endDate": {
+            "description": "Employment end date. Zero timestamp indicates an ongoing role.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "description": "Database identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "skills": {
+            "items": {
+              "description": "Skill associated with the role.",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "slug": {
+            "description": "URL slug for the role.",
+            "type": "string"
+          },
+          "startDate": {
+            "description": "Employment start date.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "subtitle": {
+            "description": "Role subtitle.",
+            "type": "string"
+          },
+          "title": {
+            "description": "Role title.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "startDate",
+          "endDate",
+          "title",
+          "subtitle",
+          "companyId",
+          "company",
+          "companyIcon",
+          "slug",
+          "description",
+          "skills"
+        ],
+        "type": "object"
+      },
+      "RoleResponse": {
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        },
+        "type": "object"
+      },
+      "RolesResponse": {
+        "properties": {
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/Role"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "Tag": {
+        "properties": {
+          "icon": {
+            "description": "Optional emoji or icon for the tag.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Database identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "description": "Tag display name.",
+            "type": "string"
+          },
+          "slug": {
+            "description": "URL slug for the tag.",
+            "type": "string"
+          },
+          "theme": {
+            "description": "Optional theme identifier for the tag.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ],
+        "type": "object"
+      },
+      "TagItem": {
+        "properties": {
+          "id": {
+            "description": "Database identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "itemId": {
+            "description": "Linked item identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "itemType": {
+            "description": "Type of item linked to the tag.",
+            "enum": [
+              "notes",
+              "roles",
+              "projects"
+            ],
+            "type": "string"
+          },
+          "tagId": {
+            "description": "Linked tag identifier.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "tagId",
+          "itemId",
+          "itemType"
+        ],
+        "type": "object"
+      },
+      "TagItemResponse": {
+        "properties": {
+          "taggedItem": {
+            "$ref": "#/components/schemas/TagItem"
+          }
+        },
+        "type": "object"
+      },
+      "TagItemsResponse": {
+        "properties": {
+          "taggedItems": {
+            "items": {
+              "$ref": "#/components/schemas/TagItem"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "TagsResponse": {
+        "properties": {
+          "tags": {
+            "items": {
+              "$ref": "#/components/schemas/Tag"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "UpdateCompanyRequest": {
+        "properties": {
+          "description": {
+            "description": "Markdown description for the company.",
+            "type": "string"
+          },
+          "icon": {
+            "description": "Icon URL for the company.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Company display name.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "UpdateItemNoteRequest": {
+        "properties": {
+          "itemId": {
+            "description": "Linked item identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "itemType": {
+            "description": "Type of item linked to the note.",
+            "enum": [
+              "notes",
+              "roles",
+              "projects"
+            ],
+            "type": "string"
+          },
+          "noteId": {
+            "description": "Linked note identifier.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "UpdateNoteRequest": {
+        "properties": {
+          "body": {
+            "description": "Note body in Markdown.",
+            "type": "string"
+          },
+          "publishedAt": {
+            "description": "Publication timestamp.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "subtitle": {
+            "description": "Note subtitle.",
+            "type": "string"
+          },
+          "title": {
+            "description": "Note title.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "UpdateProjectRequest": {
+        "properties": {
+          "description": {
+            "description": "Project description.",
+            "type": "string"
+          },
+          "endDate": {
+            "description": "Project end date. Omitted while the project is ongoing.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "imageUrl": {
+            "description": "Public URL of the project's lead image.",
+            "type": "string"
+          },
+          "startDate": {
+            "description": "Project start date.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "description": "Project title.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "UpdateRoleRequest": {
+        "properties": {
+          "companyId": {
+            "description": "Identifier for the related company.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "description": {
+            "description": "Markdown description of responsibilities.",
+            "type": "string"
+          },
+          "endDate": {
+            "description": "Employment end date. Zero timestamp indicates an ongoing role.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "skills": {
+            "items": {
+              "description": "Skill associated with the role.",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "startDate": {
+            "description": "Employment start date.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "subtitle": {
+            "description": "Role subtitle.",
+            "type": "string"
+          },
+          "title": {
+            "description": "Role title.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "UpdateTagItemRequest": {
+        "properties": {
+          "itemId": {
+            "description": "Linked item identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "itemType": {
+            "description": "Type of item linked to the tag.",
+            "enum": [
+              "notes",
+              "roles",
+              "projects"
+            ],
+            "type": "string"
+          },
+          "tagId": {
+            "description": "Linked tag identifier.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "bearerFormat": "opaque token",
+        "description": "Bearer token issued by the admin login endpoint.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Backend API powering api.etin.dev.",
+    "title": "api.etin.dev",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/swagger": {
+      "get": {
+        "operationId": "getSwaggerDocument",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OpenAPI document for the API."
+          }
+        },
+        "summary": "Retrieve the OpenAPI specification",
+        "tags": [
+          "Documentation"
+        ]
+      }
+    },
+    "/v1/admin/login": {
+      "post": {
+        "operationId": "adminLogin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminLoginResponse"
+                }
+              }
+            },
+            "description": "Admin session created."
+          },
+          "400": {
+            "description": "Invalid credentials payload."
+          },
+          "401": {
+            "description": "Invalid admin credentials."
+          }
+        },
+        "summary": "Create an admin session token",
+        "tags": [
+          "Administration"
+        ]
+      }
+    },
+    "/v1/admin/logout": {
+      "post": {
+        "operationId": "adminLogout",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminLogoutResponse"
+                }
+              }
+            },
+            "description": "Admin session revoked."
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Invalidate the current admin session token",
+        "tags": [
+          "Administration"
+        ]
+      }
+    },
+    "/v1/assets": {
+      "post": {
+        "operationId": "uploadAsset",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/AssetUploadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssetUploadResponse"
+                }
+              }
+            },
+            "description": "Asset uploaded."
+          },
+          "400": {
+            "description": "Invalid upload payload or missing file."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          },
+          "413": {
+            "description": "Uploaded file exceeds the maximum allowed size."
+          },
+          "500": {
+            "description": "Failed to persist asset metadata."
+          },
+          "502": {
+            "description": "Failed to upload asset to storage provider."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Upload a new asset",
+        "tags": [
+          "Assets"
+        ]
+      }
+    },
+    "/v1/companies": {
+      "get": {
+        "operationId": "listCompanies",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompaniesResponse"
+                }
+              }
+            },
+            "description": "Companies retrieved."
+          },
+          "500": {
+            "description": "Server error retrieving companies."
+          }
+        },
+        "summary": "List companies",
+        "tags": [
+          "Companies"
+        ]
+      },
+      "post": {
+        "operationId": "createCompany",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCompanyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyResponse"
+                }
+              }
+            },
+            "description": "Company created."
+          },
+          "400": {
+            "description": "Invalid payload."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a company",
+        "tags": [
+          "Companies"
+        ]
+      }
+    },
+    "/v1/companies/{companyId}": {
+      "delete": {
+        "operationId": "deleteCompany",
+        "parameters": [
+          {
+            "description": "Identifier of the company.",
+            "in": "path",
+            "name": "companyId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Company deleted."
+          },
+          "400": {
+            "description": "Invalid company identifier."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          },
+          "500": {
+            "description": "Server error deleting company."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a company",
+        "tags": [
+          "Companies"
+        ]
+      },
+      "get": {
+        "operationId": "getCompany",
+        "parameters": [
+          {
+            "description": "Identifier of the company.",
+            "in": "path",
+            "name": "companyId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyResponse"
+                }
+              }
+            },
+            "description": "Company retrieved."
+          },
+          "400": {
+            "description": "Invalid company identifier."
+          },
+          "500": {
+            "description": "Server error retrieving company."
+          }
+        },
+        "summary": "Retrieve a company",
+        "tags": [
+          "Companies"
+        ]
+      },
+      "put": {
+        "operationId": "updateCompany",
+        "parameters": [
+          {
+            "description": "Identifier of the company.",
+            "in": "path",
+            "name": "companyId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCompanyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompanyResponse"
+                }
+              }
+            },
+            "description": "Company updated."
+          },
+          "400": {
+            "description": "Invalid payload."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          },
+          "500": {
+            "description": "Server error updating company."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update a company",
+        "tags": [
+          "Companies"
+        ]
+      }
+    },
+    "/v1/healthcheck": {
+      "get": {
+        "operationId": "getHealthcheck",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthcheckResponse"
+                }
+              }
+            },
+            "description": "Service is available."
+          }
+        },
+        "summary": "Check service health",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/v1/item-notes": {
+      "get": {
+        "operationId": "listItemNotes",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemNotesResponse"
+                }
+              }
+            },
+            "description": "Item note associations retrieved."
+          },
+          "500": {
+            "description": "Server error retrieving item note associations."
+          }
+        },
+        "summary": "List item-note links",
+        "tags": [
+          "Item Notes"
+        ]
+      },
+      "post": {
+        "operationId": "createItemNote",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateItemNoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemNoteResponse"
+                }
+              }
+            },
+            "description": "Item note association created."
+          },
+          "400": {
+            "description": "Invalid payload."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create an item-note link",
+        "tags": [
+          "Item Notes"
+        ]
+      }
+    },
+    "/v1/item-notes/items/{itemType}/{itemId}": {
+      "get": {
+        "operationId": "listNotesForItem",
+        "parameters": [
+          {
+            "description": "Type of item to fetch related records for.",
+            "in": "path",
+            "name": "itemType",
+            "required": true,
+            "schema": {
+              "enum": [
+                "notes",
+                "roles",
+                "projects"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Identifier of the item to fetch related records for.",
+            "in": "path",
+            "name": "itemId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesResponse"
+                }
+              }
+            },
+            "description": "Notes retrieved."
+          },
+          "400": {
+            "description": "Invalid item type or identifier."
+          },
+          "500": {
+            "description": "Server error retrieving notes for the item."
+          }
+        },
+        "summary": "List notes associated with an item",
+        "tags": [
+          "Item Notes"
+        ]
+      }
+    },
+    "/v1/item-notes/{itemNoteId}": {
+      "delete": {
+        "operationId": "deleteItemNote",
+        "parameters": [
+          {
+            "description": "Identifier of the item-note link.",
+            "in": "path",
+            "name": "itemNoteId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Item note association deleted."
+          },
+          "400": {
+            "description": "Invalid item-note identifier."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          },
+          "404": {
+            "description": "Item note association not found."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete an item-note link",
+        "tags": [
+          "Item Notes"
+        ]
+      },
+      "get": {
+        "operationId": "getItemNote",
+        "parameters": [
+          {
+            "description": "Identifier of the item-note link.",
+            "in": "path",
+            "name": "itemNoteId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemNoteResponse"
+                }
+              }
+            },
+            "description": "Item note association retrieved."
+          },
+          "400": {
+            "description": "Invalid item-note identifier."
+          },
+          "404": {
+            "description": "Item note association not found."
+          }
+        },
+        "summary": "Retrieve an item-note link",
+        "tags": [
+          "Item Notes"
+        ]
+      },
+      "put": {
+        "operationId": "updateItemNote",
+        "parameters": [
+          {
+            "description": "Identifier of the item-note link.",
+            "in": "path",
+            "name": "itemNoteId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateItemNoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItemNoteResponse"
+                }
+              }
+            },
+            "description": "Item note association updated."
+          },
+          "400": {
+            "description": "Invalid payload."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          },
+          "404": {
+            "description": "Item note association not found."
+          },
+          "500": {
+            "description": "Server error updating item note association."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update an item-note link",
+        "tags": [
+          "Item Notes"
+        ]
+      }
+    },
+    "/v1/notes": {
+      "get": {
+        "operationId": "listNotes",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotesResponse"
+                }
+              }
+            },
+            "description": "Notes retrieved."
+          },
+          "500": {
+            "description": "Server error retrieving notes."
+          }
+        },
+        "summary": "List notes",
+        "tags": [
+          "Notes"
+        ]
+      },
+      "post": {
+        "operationId": "createNote",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateNoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteResponse"
+                }
+              }
+            },
+            "description": "Note created."
+          },
+          "400": {
+            "description": "Invalid payload."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a note",
+        "tags": [
+          "Notes"
+        ]
+      }
+    },
+    "/v1/notes/{noteId}": {
+      "delete": {
+        "operationId": "deleteNote",
+        "parameters": [
+          {
+            "description": "Identifier of the note.",
+            "in": "path",
+            "name": "noteId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Note deleted."
+          },
+          "400": {
+            "description": "Invalid note identifier."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          },
+          "404": {
+            "description": "Note not found."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a note",
+        "tags": [
+          "Notes"
+        ]
+      },
+      "get": {
+        "operationId": "getNote",
+        "parameters": [
+          {
+            "description": "Identifier of the note.",
+            "in": "path",
+            "name": "noteId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteResponse"
+                }
+              }
+            },
+            "description": "Note retrieved."
+          },
+          "400": {
+            "description": "Invalid note identifier."
+          },
+          "404": {
+            "description": "Note not found."
+          }
+        },
+        "summary": "Retrieve a note",
+        "tags": [
+          "Notes"
+        ]
+      },
+      "put": {
+        "operationId": "updateNote",
+        "parameters": [
+          {
+            "description": "Identifier of the note.",
+            "in": "path",
+            "name": "noteId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteResponse"
+                }
+              }
+            },
+            "description": "Note updated."
+          },
+          "400": {
+            "description": "Invalid payload."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          },
+          "404": {
+            "description": "Note not found."
+          },
+          "500": {
+            "description": "Server error updating note."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update a note",
+        "tags": [
+          "Notes"
+        ]
+      }
+    },
+    "/v1/projects": {
+      "get": {
+        "operationId": "listProjects",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectsResponse"
+                }
+              }
+            },
+            "description": "Projects retrieved."
+          },
+          "500": {
+            "description": "Server error retrieving projects."
+          }
+        },
+        "summary": "List projects",
+        "tags": [
+          "Projects"
+        ]
+      },
+      "post": {
+        "operationId": "createProject",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
+                }
+              }
+            },
+            "description": "Project created."
+          },
+          "400": {
+            "description": "Invalid payload."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a project",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/v1/projects/{projectId}": {
+      "delete": {
+        "operationId": "deleteProject",
+        "parameters": [
+          {
+            "description": "Identifier of the project.",
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Project deleted."
+          },
+          "400": {
+            "description": "Invalid project identifier."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          },
+          "404": {
+            "description": "Project not found."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a project",
+        "tags": [
+          "Projects"
+        ]
+      },
+      "get": {
+        "operationId": "getProject",
+        "parameters": [
+          {
+            "description": "Identifier of the project.",
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
+                }
+              }
+            },
+            "description": "Project retrieved."
+          },
+          "400": {
+            "description": "Invalid project identifier."
+          },
+          "404": {
+            "description": "Project not found."
+          }
+        },
+        "summary": "Retrieve a project",
+        "tags": [
+          "Projects"
+        ]
+      },
+      "put": {
+        "operationId": "updateProject",
+        "parameters": [
+          {
+            "description": "Identifier of the project.",
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProjectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectResponse"
+                }
+              }
+            },
+            "description": "Project updated."
+          },
+          "400": {
+            "description": "Invalid payload."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          },
+          "404": {
+            "description": "Project not found."
+          },
+          "500": {
+            "description": "Server error updating project."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update a project",
+        "tags": [
+          "Projects"
+        ]
+      }
+    },
+    "/v1/roles": {
+      "get": {
+        "operationId": "listRoles",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RolesResponse"
+                }
+              }
+            },
+            "description": "Roles retrieved."
+          },
+          "500": {
+            "description": "Server error retrieving roles."
+          }
+        },
+        "summary": "List roles",
+        "tags": [
+          "Roles"
+        ]
+      },
+      "post": {
+        "operationId": "createRole",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleResponse"
+                }
+              }
+            },
+            "description": "Role created."
+          },
+          "400": {
+            "description": "Invalid payload."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a role",
+        "tags": [
+          "Roles"
+        ]
+      }
+    },
+    "/v1/roles/{roleId}": {
+      "delete": {
+        "operationId": "deleteRole",
+        "parameters": [
+          {
+            "description": "Identifier of the role.",
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Role deleted."
+          },
+          "400": {
+            "description": "Invalid role identifier."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          },
+          "404": {
+            "description": "Role not found."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a role",
+        "tags": [
+          "Roles"
+        ]
+      },
+      "get": {
+        "operationId": "getRole",
+        "parameters": [
+          {
+            "description": "Identifier of the role.",
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleResponse"
+                }
+              }
+            },
+            "description": "Role retrieved."
+          },
+          "400": {
+            "description": "Invalid role identifier."
+          },
+          "404": {
+            "description": "Role not found."
+          }
+        },
+        "summary": "Retrieve a role",
+        "tags": [
+          "Roles"
+        ]
+      },
+      "put": {
+        "operationId": "updateRole",
+        "parameters": [
+          {
+            "description": "Identifier of the role.",
+            "in": "path",
+            "name": "roleId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleResponse"
+                }
+              }
+            },
+            "description": "Role updated."
+          },
+          "400": {
+            "description": "Invalid payload."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          },
+          "404": {
+            "description": "Role not found."
+          },
+          "500": {
+            "description": "Server error updating role."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update a role",
+        "tags": [
+          "Roles"
+        ]
+      }
+    },
+    "/v1/tagged-items": {
+      "get": {
+        "operationId": "listTagItems",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagItemsResponse"
+                }
+              }
+            },
+            "description": "Tag associations retrieved."
+          },
+          "500": {
+            "description": "Server error retrieving tag associations."
+          }
+        },
+        "summary": "List tag associations",
+        "tags": [
+          "Tag Items"
+        ]
+      },
+      "post": {
+        "operationId": "createTagItem",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTagItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagItemResponse"
+                }
+              }
+            },
+            "description": "Tag association created."
+          },
+          "400": {
+            "description": "Invalid payload."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a tag association",
+        "tags": [
+          "Tag Items"
+        ]
+      }
+    },
+    "/v1/tagged-items/items/{itemType}/{itemId}": {
+      "get": {
+        "operationId": "listTagsForItem",
+        "parameters": [
+          {
+            "description": "Type of item to fetch related records for.",
+            "in": "path",
+            "name": "itemType",
+            "required": true,
+            "schema": {
+              "enum": [
+                "notes",
+                "roles",
+                "projects"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Identifier of the item to fetch related records for.",
+            "in": "path",
+            "name": "itemId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagsResponse"
+                }
+              }
+            },
+            "description": "Tags retrieved."
+          },
+          "400": {
+            "description": "Invalid item type or identifier."
+          },
+          "500": {
+            "description": "Server error retrieving tags for the item."
+          }
+        },
+        "summary": "List tags associated with an item",
+        "tags": [
+          "Tag Items"
+        ]
+      }
+    },
+    "/v1/tagged-items/{taggedItemId}": {
+      "delete": {
+        "operationId": "deleteTagItem",
+        "parameters": [
+          {
+            "description": "Identifier of the tag association.",
+            "in": "path",
+            "name": "taggedItemId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Tag association deleted."
+          },
+          "400": {
+            "description": "Invalid tag association identifier."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          },
+          "404": {
+            "description": "Tag association not found."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a tag association",
+        "tags": [
+          "Tag Items"
+        ]
+      },
+      "get": {
+        "operationId": "getTagItem",
+        "parameters": [
+          {
+            "description": "Identifier of the tag association.",
+            "in": "path",
+            "name": "taggedItemId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagItemResponse"
+                }
+              }
+            },
+            "description": "Tag association retrieved."
+          },
+          "400": {
+            "description": "Invalid tag association identifier."
+          },
+          "404": {
+            "description": "Tag association not found."
+          }
+        },
+        "summary": "Retrieve a tag association",
+        "tags": [
+          "Tag Items"
+        ]
+      },
+      "put": {
+        "operationId": "updateTagItem",
+        "parameters": [
+          {
+            "description": "Identifier of the tag association.",
+            "in": "path",
+            "name": "taggedItemId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTagItemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagItemResponse"
+                }
+              }
+            },
+            "description": "Tag association updated."
+          },
+          "400": {
+            "description": "Invalid payload."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          },
+          "404": {
+            "description": "Tag association not found."
+          },
+          "500": {
+            "description": "Server error updating tag association."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update a tag association",
+        "tags": [
+          "Tag Items"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.etin.dev"
+    },
+    {
+      "url": "http://localhost:4000"
+    }
+  ]
+}

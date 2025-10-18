@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+
+	"api.etin.dev/internal/version"
 )
 
 func (app *application) healthcheck(w http.ResponseWriter, r *http.Request) {
@@ -13,7 +15,7 @@ func (app *application) healthcheck(w http.ResponseWriter, r *http.Request) {
 	data := map[string]string{
 		"status":      "available",
 		"environment": app.config.env,
-		"version":     version,
+		"version":     version.Number,
 	}
 	j, err := json.Marshal(data)
 	if err != nil {
