@@ -106,11 +106,13 @@ func parseBearerToken(header string) (string, error) {
 	if header == "" {
 		return "", errors.New("missing authorization header")
 	}
-	const prefix = "Bearer "
-	if !strings.HasPrefix(header, prefix) {
+
+	parts := strings.Fields(header)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
 		return "", errors.New("authorization header is not a bearer token")
 	}
-	token := strings.TrimSpace(strings.TrimPrefix(header, prefix))
+
+	token := strings.TrimSpace(parts[1])
 	if token == "" {
 		return "", errors.New("authorization token missing")
 	}
