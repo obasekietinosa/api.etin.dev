@@ -92,7 +92,7 @@ func (q *SelectQueryBuilder) Query() (*sql.Rows, error) {
 		return nil, err
 	}
 	values := q.buildPreparedStatementValues()
-	if q.queryBuilder.preparedVariableOffset > 0 {
+	if len(values) > 0 {
 		return q.queryBuilder.DB.Query(*query, values...)
 	}
 	return q.queryBuilder.DB.Query(*query)
@@ -103,8 +103,8 @@ func (q *SelectQueryBuilder) QueryRow() (*sql.Row, error) {
 	if err != nil {
 		return nil, err
 	}
-	if q.queryBuilder.preparedVariableOffset > 0 {
-		values := q.buildPreparedStatementValues()
+	values := q.buildPreparedStatementValues()
+	if len(values) > 0 {
 		return q.queryBuilder.DB.QueryRow(*query, values...), nil
 	}
 	return q.queryBuilder.DB.QueryRow(*query), nil
