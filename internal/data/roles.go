@@ -51,7 +51,7 @@ func (r RoleModel) Insert(role *Role) error {
 		"inserted_role.updatedAt as updatedAt",
 		"companies.name as company",
 		"companies.icon as companyIcon",
-        ).From("inserted_role").LeftJoin("companies", "companyId", "id").QueryRow()
+	).From("inserted_role").LeftJoin("companies", "companyId", "id").QueryRow()
 
 	if err != nil {
 		return err
@@ -71,7 +71,7 @@ func (r RoleModel) Get(roleId int64) (*Role, error) {
 			"roles.endDate AS endDate", "roles.title AS title", "roles.subtitle AS subtitle", "roles.slug AS slug",
 			"roles.description AS description", "roles.skills AS skills",
 			"companies.id as companyId", "companies.name as company", "companies.icon as companyIcon").
-                LeftJoin("companies", "companyId", "id").
+		LeftJoin("companies", "companyId", "id").
 		WhereEqual("roles.deletedAt", nil).
 		WhereEqual("roles.id", roleId).
 		QueryRow()
@@ -125,7 +125,7 @@ func (r RoleModel) Update(role *Role) error {
 			"updated_role.updatedAt AS updatedAt",
 			"companies.id AS companyId",
 			"companies.name AS company",
-			"companies.icon AS companyIcon").From("updated_role").LeftJoin("companies", "id", "companyId").QueryRow()
+			"companies.icon AS companyIcon").From("updated_role").LeftJoin("companies", "companyId", "id").QueryRow()
 
 	if err != nil {
 		return err
