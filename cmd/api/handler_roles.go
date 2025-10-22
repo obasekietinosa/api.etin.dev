@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -139,7 +140,7 @@ func (app *application) updateRole(w http.ResponseWriter, r *http.Request) {
 	}
 	err = app.models.Roles.Update(role)
 	if err != nil {
-		app.logger.Printf("Could not update role: %d. Error: %s", id, err)
+		app.logPostgresError(fmt.Sprintf("Could not update role %d", id), err)
 		app.writeError(w, http.StatusInternalServerError)
 		return
 	}

@@ -5,6 +5,9 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
+
+	"github.com/lib/pq"
 )
 
 type envelope map[string]any
@@ -53,4 +56,39 @@ func (app *application) isRequestAuthenticated(r *http.Request) bool {
 	}
 
 	return app.sessions.validate(token)
+}
+
+func (app *application) logPostgresError(context string, err error) {
+	if app.logger == nil || err == nil {
+		return
+	}
+
+	pqErr, ok := err.(*pq.Error)
+	if !ok {
+		app.logger.Printf("%s: %v", context, err)
+		return
+	}
+
+	details := []string{string(pqErr.Code)}
+	if pqErr.Table != "" {
+		details = append(details, "table="+pqErr.Table)
+	}
+	if pqErr.Column != "" {
+		details = append(details, "column="+pqErr.Column)
+	}
+	if pqErr.Constraint != "" {
+		details = append(details, "constraint="+pqErr.Constraint)
+	}
+	if pqErr.Detail != "" {
+		details = append(details, "detail="+pqErr.Detail)
+	}
+	if pqErr.Where != "" {
+		details = append(details, "where="+pqErr.Where)
+	}
+
+	app.logger.Printf("%s: %s (%s)", context, pqErr.Message, strings.Join(details, ", "))
+
+	if pqErr.InternalQuery != "" {
+		app.logger.Printf("%s: internal query=%s", context, pqErr.InternalQuery)
+	}
 }
