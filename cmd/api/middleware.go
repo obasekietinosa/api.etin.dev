@@ -70,26 +70,15 @@ func (sr *statusRecorder) Flush() {
 	}
 }
 
-func (app *application) deployWebhook(next http.Handler, methods ...string) http.Handler {
-	allowed := make(map[string]struct{}, len(methods))
-	for _, method := range methods {
-		allowed[strings.ToUpper(method)] = struct{}{}
-	}
-
+func (app *application) deployWebhook(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		recorder := newStatusRecorder(w)
 		next.ServeHTTP(recorder, r)
 
-		if len(allowed) > 0 {
-			if _, ok := allowed[r.Method]; !ok {
-				return
-			}
-		} else {
-			switch r.Method {
-			case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
-			default:
-				return
-			}
+		switch r.Method {
+		case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
+		default:
+			return
 		}
 
 		if recorder.status >= 200 && recorder.status < 300 {
