@@ -48,6 +48,8 @@ func (app *application) getCreateRolesHandler(w http.ResponseWriter, r *http.Req
 			Description: input.Description,
 			Skills:      input.Skills,
 		}
+		role.Slug = slugify(role.Title)
+		role.UpdatedAt = time.Now()
 		err = app.models.Roles.Insert(role)
 		if err != nil {
 			app.logger.Printf("Error: %s", err)
@@ -125,6 +127,7 @@ func (app *application) updateRole(w http.ResponseWriter, r *http.Request) {
 	}
 	if input.Title != nil {
 		role.Title = *input.Title
+		role.Slug = slugify(*input.Title)
 	}
 	if input.Subtitle != nil {
 		role.Subtitle = *input.Subtitle
@@ -138,6 +141,7 @@ func (app *application) updateRole(w http.ResponseWriter, r *http.Request) {
 	if len(input.Skills) > 0 {
 		role.Skills = input.Skills
 	}
+	role.UpdatedAt = time.Now()
 	err = app.models.Roles.Update(role)
 	if err != nil {
 		app.logPostgresError(fmt.Sprintf("Could not update role %d", id), err)
