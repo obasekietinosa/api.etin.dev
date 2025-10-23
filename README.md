@@ -58,12 +58,17 @@ export WEBSITE_CLOUDINARY_CLOUD_NAME='your-cloud-name' && \
 export WEBSITE_CLOUDINARY_API_KEY='your-api-key' && \
 export WEBSITE_CLOUDINARY_API_SECRET='your-api-secret' && \
 export WEBSITE_CLOUDINARY_FOLDER='website-assets' && \
+export WEBSITE_DEPLOY_WEBHOOK_URL='https://webhook-url-here' && \
 go run ./cmd/api
 ```
 
 The optional `WEBSITE_CORS_TRUSTED_ORIGINS` environment variable (or the `-cors-trusted-origins` flag) accepts a space separated
 list of origins that should receive CORS headers. When unset, the API will automatically trust `https://etin.dev` and
 `https://admin.etin.dev`.
+
+Set `WEBSITE_DEPLOY_WEBHOOK_URL` (or the `-deploy-webhook-url` flag) to notify an external service whenever content-changing
+requests succeed. The API issues a background `POST` request with an empty JSON object to the configured URL; leaving the
+variable unset disables the webhook entirely.
 
 With the server running you can exchange the admin credentials for a bearer token by
 posting to the login endpoint:

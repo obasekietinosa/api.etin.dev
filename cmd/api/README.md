@@ -12,6 +12,10 @@ The command generates the OpenAPI document on startup so the latest routes and s
 
 The command expects the database DSN and admin credentials to be supplied either as flags or via the environment variables `WEBSITE_DB_DSN`, `WEBSITE_ADMIN_EMAIL`, and `WEBSITE_ADMIN_PASSWORD`.
 
+You can optionally provide `WEBSITE_DEPLOY_WEBHOOK_URL` (or the `-deploy-webhook-url` flag) to ping an external deployment
+service whenever write operations succeed. When configured, the server asynchronously issues a `POST` request containing an
+empty JSON object to the supplied URL.
+
 ## Asset uploads
 
 Authenticated administrators can push files to Cloudinary through the `/v1/assets` endpoint. Send a
