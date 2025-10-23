@@ -21,6 +21,7 @@ type config struct {
 	dsn           string
 	adminEmail    string
 	adminPassword string
+	deployWebhook string
 	cors          struct {
 		trustedOrigins []string
 	}
@@ -40,6 +41,7 @@ type application struct {
 	assets     assets.Uploader
 	swagger    []byte
 	sessions   *sessionManager
+	httpClient *http.Client
 }
 
 func main() {
@@ -57,6 +59,7 @@ func main() {
 	flag.StringVar(&cfg.cloudinary.apiKey, "cloudinary-api-key", os.Getenv("WEBSITE_CLOUDINARY_API_KEY"), "Cloudinary API key")
 	flag.StringVar(&cfg.cloudinary.apiSecret, "cloudinary-api-secret", os.Getenv("WEBSITE_CLOUDINARY_API_SECRET"), "Cloudinary API secret")
 	flag.StringVar(&cfg.cloudinary.folder, "cloudinary-folder", os.Getenv("WEBSITE_CLOUDINARY_FOLDER"), "Optional Cloudinary folder for uploads")
+	flag.StringVar(&cfg.deployWebhook, "deploy-webhook-url", os.Getenv("WEBSITE_DEPLOY_WEBHOOK_URL"), "Optional URL to trigger frontend deployments")
 	flag.Parse()
 
 	logger := log.New(os.Stdout, "", log.Ldate|log.Ltime)
@@ -114,6 +117,7 @@ func main() {
 		assets:     uploader,
 		swagger:    embeddedSwagger,
 		sessions:   newSessionManager(24 * time.Hour),
+		httpClient: &http.Client{Timeout: 10 * time.Second},
 	}
 
 	addr := fmt.Sprintf(":%d", cfg.port)

@@ -55,6 +55,7 @@ func (app *application) getCreateRolesHandler(w http.ResponseWriter, r *http.Req
 			return
 		}
 		app.writeJSON(w, http.StatusCreated, envelope{"role": role})
+		app.triggerDeployWebhook()
 	}
 }
 
@@ -145,6 +146,7 @@ func (app *application) updateRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	app.writeJSON(w, http.StatusOK, envelope{"role": role})
+	app.triggerDeployWebhook()
 }
 
 func (app *application) deleteRole(w http.ResponseWriter, r *http.Request) {
@@ -163,4 +165,5 @@ func (app *application) deleteRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	app.writeJSON(w, http.StatusNoContent, envelope{"role": nil})
+	app.triggerDeployWebhook()
 }

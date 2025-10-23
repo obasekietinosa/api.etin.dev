@@ -53,6 +53,7 @@ func (app *application) getCreateCompaniesHandler(w http.ResponseWriter, r *http
 				return
 			}
 			app.writeJSON(w, http.StatusOK, envelope{"company": company})
+			app.triggerDeployWebhook()
 			return
 		}
 	}
@@ -123,6 +124,7 @@ func (app *application) getUpdateDeleteCompaniesHandler(w http.ResponseWriter, r
 				return
 			}
 			app.writeJSON(w, http.StatusAccepted, envelope{"company": company})
+			app.triggerDeployWebhook()
 			return
 		}
 	case http.MethodDelete:
@@ -145,6 +147,7 @@ func (app *application) getUpdateDeleteCompaniesHandler(w http.ResponseWriter, r
 				return
 			}
 			app.writeJSON(w, http.StatusNoContent, nil)
+			app.triggerDeployWebhook()
 			return
 
 		}

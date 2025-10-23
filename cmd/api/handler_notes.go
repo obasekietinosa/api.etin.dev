@@ -65,6 +65,7 @@ func (app *application) getCreateNotesHandler(w http.ResponseWriter, r *http.Req
 		}
 
 		app.writeJSON(w, http.StatusCreated, envelope{"note": note})
+		app.triggerDeployWebhook()
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
@@ -158,6 +159,7 @@ func (app *application) updateNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"note": note})
+	app.triggerDeployWebhook()
 }
 
 func (app *application) deleteNote(w http.ResponseWriter, r *http.Request) {
@@ -180,4 +182,5 @@ func (app *application) deleteNote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.writeJSON(w, http.StatusNoContent, envelope{"note": nil})
+	app.triggerDeployWebhook()
 }
