@@ -61,7 +61,6 @@ func (app *application) getCreateTagItemsHandler(w http.ResponseWriter, r *http.
 		}
 
 		app.writeJSON(w, http.StatusCreated, envelope{"taggedItem": tagItem})
-		app.triggerDeployWebhook()
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
@@ -152,7 +151,6 @@ func (app *application) updateTagItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"taggedItem": tagItem})
-	app.triggerDeployWebhook()
 }
 
 func (app *application) deleteTagItem(w http.ResponseWriter, r *http.Request) {
@@ -174,7 +172,6 @@ func (app *application) deleteTagItem(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.writeJSON(w, http.StatusNoContent, envelope{"taggedItem": nil})
-	app.triggerDeployWebhook()
 }
 
 func (app *application) getTagsForItemHandler(w http.ResponseWriter, r *http.Request) {

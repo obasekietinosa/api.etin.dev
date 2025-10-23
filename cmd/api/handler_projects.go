@@ -56,7 +56,6 @@ func (app *application) getCreateProjectsHandler(w http.ResponseWriter, r *http.
 		}
 
 		app.writeJSON(w, http.StatusCreated, envelope{"project": project})
-		app.triggerDeployWebhook()
 	default:
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
@@ -154,7 +153,6 @@ func (app *application) updateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"project": project})
-	app.triggerDeployWebhook()
 }
 
 func (app *application) deleteProject(w http.ResponseWriter, r *http.Request) {
@@ -177,5 +175,4 @@ func (app *application) deleteProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	app.writeJSON(w, http.StatusNoContent, envelope{"project": nil})
-	app.triggerDeployWebhook()
 }
