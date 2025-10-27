@@ -109,9 +109,38 @@ func normalizeOrigin(origin string) string {
 		return ""
 	}
 
+	if trimmed == "*" {
+		return "*"
+	}
+
+	if !strings.Contains(trimmed, "://") {
+		scheme := "https"
+		hostPort := trimmed
+
+		host := hostPort
+		if slash := strings.Index(host, "/"); slash != -1 {
+			host = host[:slash]
+		}
+		if colon := strings.Index(host, ":"); colon != -1 {
+			host = host[:colon]
+		}
+
+		lowerHost := strings.ToLower(host)
+		if lowerHost == "localhost" || strings.HasPrefix(lowerHost, "127.") || strings.HasPrefix(lowerHost, "0.0.0.0") || strings.HasPrefix(lowerHost, "[::1]") {
+			scheme = "http"
+		}
+
+		trimmed = scheme + "://" + hostPort
+	}
+
 	parsed, err := url.Parse(trimmed)
 	if err != nil {
 		return trimmed
+	}
+
+	if parsed.Host == "" && parsed.Path != "" {
+		parsed.Host = parsed.Path
+		parsed.Path = ""
 	}
 
 	if parsed.Scheme != "" {
