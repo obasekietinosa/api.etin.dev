@@ -264,6 +264,12 @@
           "title": {
             "description": "Project title.",
             "type": "string"
+          },
+          "notes": {
+            "items": {
+              "$ref": "#/components/schemas/PublicNote"
+            },
+            "type": "array"
           }
         },
         "required": [
@@ -642,7 +648,8 @@
           "image",
           "slug",
           "description",
-          "technologies"
+          "technologies",
+          "notes"
         ],
         "type": "object"
       },
@@ -706,6 +713,12 @@
           "title": {
             "description": "Role title.",
             "type": "string"
+          },
+          "notes": {
+            "items": {
+              "$ref": "#/components/schemas/PublicNote"
+            },
+            "type": "array"
           }
         },
         "required": [
@@ -716,7 +729,8 @@
           "companyIcon",
           "slug",
           "description",
-          "skills"
+          "skills",
+          "notes"
         ],
         "type": "object"
       },

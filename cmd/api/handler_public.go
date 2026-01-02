@@ -28,28 +28,30 @@ type publicNote struct {
 }
 
 type publicProject struct {
-	ID           int64      `json:"id"`
-	StartDate    string     `json:"startDate"`
-	EndDate      *string    `json:"endDate"`
-	Title        string     `json:"title"`
-	Image        string     `json:"image"`
-	Slug         string     `json:"slug"`
-	Status       *publicTag `json:"status"`
-	Description  string     `json:"description"`
-	Technologies []string   `json:"technologies"`
+	ID           int64        `json:"id"`
+	StartDate    string       `json:"startDate"`
+	EndDate      *string      `json:"endDate"`
+	Title        string       `json:"title"`
+	Image        string       `json:"image"`
+	Slug         string       `json:"slug"`
+	Status       *publicTag   `json:"status"`
+	Description  string       `json:"description"`
+	Technologies []string     `json:"technologies"`
+	Notes        []publicNote `json:"notes"`
 }
 
 type publicRole struct {
-	RoleID      int64    `json:"roleId"`
-	StartDate   string   `json:"startDate"`
-	EndDate     *string  `json:"endDate"`
-	Title       string   `json:"title"`
-	Subtitle    *string  `json:"subtitle"`
-	Company     string   `json:"company"`
-	CompanyIcon string   `json:"companyIcon"`
-	Slug        string   `json:"slug"`
-	Description string   `json:"description"`
-	Skills      []string `json:"skills"`
+	RoleID      int64        `json:"roleId"`
+	StartDate   string       `json:"startDate"`
+	EndDate     *string      `json:"endDate"`
+	Title       string       `json:"title"`
+	Subtitle    *string      `json:"subtitle"`
+	Company     string       `json:"company"`
+	CompanyIcon string       `json:"companyIcon"`
+	Slug        string       `json:"slug"`
+	Description string       `json:"description"`
+	Skills      []string     `json:"skills"`
+	Notes       []publicNote `json:"notes"`
 }
 
 var slugPattern = regexp.MustCompile(`[^a-z0-9]+`)
@@ -106,7 +108,25 @@ func (app *application) getPublicProjectsHandler(w http.ResponseWriter, r *http.
 			return
 		}
 
-		response = append(response, buildPublicProject(project, tags))
+		notes, err := app.models.ItemNotes.GetNotesForItem(data.ItemTypeProjects, project.ID)
+		if err != nil {
+			app.logger.Printf("Error retrieving notes for project %d: %s", project.ID, err)
+			app.writeError(w, http.StatusInternalServerError)
+			return
+		}
+
+		publicNotes := make([]publicNote, 0, len(notes))
+		for _, note := range notes {
+			noteTags, err := app.models.TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
+			if err != nil {
+				app.logger.Printf("Error retrieving tags for note %d: %s", note.ID, err)
+				app.writeError(w, http.StatusInternalServerError)
+				return
+			}
+			publicNotes = append(publicNotes, buildPublicNote(note, noteTags))
+		}
+
+		response = append(response, buildPublicProject(project, tags, publicNotes))
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"projects": response})
@@ -128,7 +148,25 @@ func (app *application) getPublicRolesHandler(w http.ResponseWriter, r *http.Req
 	response := make([]publicRole, 0, len(roles))
 
 	for _, role := range roles {
-		response = append(response, buildPublicRole(role))
+		notes, err := app.models.ItemNotes.GetNotesForItem(data.ItemTypeRoles, role.ID)
+		if err != nil {
+			app.logger.Printf("Error retrieving notes for role %d: %s", role.ID, err)
+			app.writeError(w, http.StatusInternalServerError)
+			return
+		}
+
+		publicNotes := make([]publicNote, 0, len(notes))
+		for _, note := range notes {
+			noteTags, err := app.models.TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
+			if err != nil {
+				app.logger.Printf("Error retrieving tags for note %d: %s", note.ID, err)
+				app.writeError(w, http.StatusInternalServerError)
+				return
+			}
+			publicNotes = append(publicNotes, buildPublicNote(note, noteTags))
+		}
+
+		response = append(response, buildPublicRole(role, publicNotes))
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"roles": response})
@@ -153,7 +191,7 @@ func buildPublicNote(note *data.Note, tags []*data.Tag) publicNote {
 	}
 }
 
-func buildPublicProject(project *data.Project, tags []*data.Tag) publicProject {
+func buildPublicProject(project *data.Project, tags []*data.Tag, notes []publicNote) publicProject {
 	startDate := formatTime(project.StartDate)
 
 	var endDate *string
@@ -195,10 +233,11 @@ func buildPublicProject(project *data.Project, tags []*data.Tag) publicProject {
 		Status:       status,
 		Description:  project.Description,
 		Technologies: technologies,
+		Notes:        notes,
 	}
 }
 
-func buildPublicRole(role *data.Role) publicRole {
+func buildPublicRole(role *data.Role, notes []publicNote) publicRole {
 	startDate := formatTime(role.StartDate)
 
 	var endDate *string
@@ -223,6 +262,7 @@ func buildPublicRole(role *data.Role) publicRole {
 		Slug:        role.Slug,
 		Description: role.Description,
 		Skills:      append([]string{}, role.Skills...),
+		Notes:       notes,
 	}
 }
 
