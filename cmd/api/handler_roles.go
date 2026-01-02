@@ -9,70 +9,56 @@ import (
 	"api.etin.dev/internal/data"
 )
 
-func (app *application) getCreateRolesHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		roles, err := app.models.Roles.GetAll()
-		if err != nil {
-			app.logger.Printf("Error: %s", err)
-			app.writeError(w, http.StatusInternalServerError)
-			return
-		}
-		app.writeJSON(w, http.StatusOK, envelope{"roles": roles})
-	case http.MethodPost:
-		if !app.isRequestAuthenticated(r) {
-			app.writeError(w, http.StatusForbidden)
-			return
-		}
-		var input struct {
-			StartDate   time.Time `json:"startDate"`
-			EndDate     time.Time `json:"endDate"`
-			Title       string    `json:"title"`
-			Subtitle    string    `json:"subtitle"`
-			CompanyId   int64     `json:"companyId"`
-			Description string    `json:"description"`
-			Skills      []string  `json:"skills"`
-		}
-		err := app.readJSON(w, r, &input)
-		if err != nil {
-			app.logger.Print(err)
-			app.writeError(w, http.StatusBadRequest)
-			return
-		}
-		role := &data.Role{
-			StartDate:   input.StartDate,
-			EndDate:     input.EndDate,
-			Title:       input.Title,
-			Subtitle:    input.Subtitle,
-			CompanyId:   input.CompanyId,
-			Description: input.Description,
-			Skills:      input.Skills,
-		}
-		err = app.models.Roles.Insert(role)
-		if err != nil {
-			app.logger.Printf("Error: %s", err)
-			app.writeError(w, http.StatusBadRequest)
-			return
-		}
-		app.writeJSON(w, http.StatusCreated, envelope{"role": role})
+func (app *application) getRolesHandler(w http.ResponseWriter, r *http.Request) {
+	roles, err := app.models.Roles.GetAll()
+	if err != nil {
+		app.logger.Printf("Error: %s", err)
+		app.writeError(w, http.StatusInternalServerError)
+		return
 	}
+	app.writeJSON(w, http.StatusOK, envelope{"roles": roles})
 }
 
-func (app *application) getUpdateDeleteRolesHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		app.getRole(w, r)
-	case http.MethodPut:
-		app.updateRole(w, r)
-	case http.MethodDelete:
-		app.deleteRole(w, r)
-	default:
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+func (app *application) createRoleHandler(w http.ResponseWriter, r *http.Request) {
+	if !app.isRequestAuthenticated(r) {
+		app.writeError(w, http.StatusForbidden)
+		return
 	}
+	var input struct {
+		StartDate   time.Time `json:"startDate"`
+		EndDate     time.Time `json:"endDate"`
+		Title       string    `json:"title"`
+		Subtitle    string    `json:"subtitle"`
+		CompanyId   int64     `json:"companyId"`
+		Description string    `json:"description"`
+		Skills      []string  `json:"skills"`
+	}
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		app.logger.Print(err)
+		app.writeError(w, http.StatusBadRequest)
+		return
+	}
+	role := &data.Role{
+		StartDate:   input.StartDate,
+		EndDate:     input.EndDate,
+		Title:       input.Title,
+		Subtitle:    input.Subtitle,
+		CompanyId:   input.CompanyId,
+		Description: input.Description,
+		Skills:      input.Skills,
+	}
+	err = app.models.Roles.Insert(role)
+	if err != nil {
+		app.logger.Printf("Error: %s", err)
+		app.writeError(w, http.StatusBadRequest)
+		return
+	}
+	app.writeJSON(w, http.StatusCreated, envelope{"role": role})
 }
 
-func (app *application) getRole(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.URL.Path[len("/v1/roles/"):], 10, 64)
+func (app *application) getRoleHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
@@ -86,12 +72,12 @@ func (app *application) getRole(w http.ResponseWriter, r *http.Request) {
 	app.writeJSON(w, http.StatusOK, envelope{"role": role})
 }
 
-func (app *application) updateRole(w http.ResponseWriter, r *http.Request) {
+func (app *application) updateRoleHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
 		app.writeError(w, http.StatusForbidden)
 		return
 	}
-	id, err := strconv.ParseInt(r.URL.Path[len("/v1/roles/"):], 10, 64)
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		app.writeError(w, http.StatusBadRequest)
 		return
@@ -147,12 +133,12 @@ func (app *application) updateRole(w http.ResponseWriter, r *http.Request) {
 	app.writeJSON(w, http.StatusOK, envelope{"role": role})
 }
 
-func (app *application) deleteRole(w http.ResponseWriter, r *http.Request) {
+func (app *application) deleteRoleHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
 		app.writeError(w, http.StatusForbidden)
 		return
 	}
-	id, err := strconv.ParseInt(r.URL.Path[len("/v1/roles/"):], 10, 64)
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		app.writeError(w, http.StatusBadRequest)
 		return

@@ -8,83 +8,67 @@ import (
 	"api.etin.dev/internal/data"
 )
 
-func (app *application) getCreateNotesHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		notes, err := app.models.Notes.GetAll()
-		if err != nil {
-			app.logger.Printf("Error retrieving notes: %s", err)
-			app.writeError(w, http.StatusInternalServerError)
-			return
-		}
-
-		app.writeJSON(w, http.StatusOK, envelope{"notes": notes})
-	case http.MethodPost:
-		if !app.isRequestAuthenticated(r) {
-			app.writeError(w, http.StatusForbidden)
-			return
-		}
-
-		var input struct {
-			Title       string     `json:"title"`
-			Subtitle    string     `json:"subtitle"`
-			Body        string     `json:"body"`
-			PublishedAt *time.Time `json:"publishedAt"`
-		}
-
-		err := app.readJSON(w, r, &input)
-		if err != nil {
-			app.logger.Printf("Could not parse request body: %s", err)
-			app.writeError(w, http.StatusBadRequest)
-			return
-		}
-
-		if input.Title == "" {
-			app.writeError(w, http.StatusBadRequest)
-			return
-		}
-
-		var publishedAt *time.Time
-		if input.PublishedAt != nil {
-			t := *input.PublishedAt
-			publishedAt = &t
-		}
-
-		note := &data.Note{
-			Title:       input.Title,
-			Subtitle:    input.Subtitle,
-			Body:        input.Body,
-			PublishedAt: publishedAt,
-		}
-
-		err = app.models.Notes.Insert(note)
-		if err != nil {
-			app.logger.Printf("Could not create note: %s", err)
-			app.writeError(w, http.StatusBadRequest)
-			return
-		}
-
-		app.writeJSON(w, http.StatusCreated, envelope{"note": note})
-	default:
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+func (app *application) getNotesHandler(w http.ResponseWriter, r *http.Request) {
+	notes, err := app.models.Notes.GetAll()
+	if err != nil {
+		app.logger.Printf("Error retrieving notes: %s", err)
+		app.writeError(w, http.StatusInternalServerError)
+		return
 	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"notes": notes})
 }
 
-func (app *application) getUpdateDeleteNotesHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		app.getNote(w, r)
-	case http.MethodPut:
-		app.updateNote(w, r)
-	case http.MethodDelete:
-		app.deleteNote(w, r)
-	default:
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+func (app *application) createNoteHandler(w http.ResponseWriter, r *http.Request) {
+	if !app.isRequestAuthenticated(r) {
+		app.writeError(w, http.StatusForbidden)
+		return
 	}
+
+	var input struct {
+		Title       string     `json:"title"`
+		Subtitle    string     `json:"subtitle"`
+		Body        string     `json:"body"`
+		PublishedAt *time.Time `json:"publishedAt"`
+	}
+
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		app.logger.Printf("Could not parse request body: %s", err)
+		app.writeError(w, http.StatusBadRequest)
+		return
+	}
+
+	if input.Title == "" {
+		app.writeError(w, http.StatusBadRequest)
+		return
+	}
+
+	var publishedAt *time.Time
+	if input.PublishedAt != nil {
+		t := *input.PublishedAt
+		publishedAt = &t
+	}
+
+	note := &data.Note{
+		Title:       input.Title,
+		Subtitle:    input.Subtitle,
+		Body:        input.Body,
+		PublishedAt: publishedAt,
+	}
+
+	err = app.models.Notes.Insert(note)
+	if err != nil {
+		app.logger.Printf("Could not create note: %s", err)
+		app.writeError(w, http.StatusBadRequest)
+		return
+	}
+
+	app.writeJSON(w, http.StatusCreated, envelope{"note": note})
 }
 
-func (app *application) getNote(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.URL.Path[len("/v1/notes/"):], 10, 64)
+func (app *application) getNoteHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		app.writeError(w, http.StatusBadRequest)
 		return
@@ -100,13 +84,13 @@ func (app *application) getNote(w http.ResponseWriter, r *http.Request) {
 	app.writeJSON(w, http.StatusOK, envelope{"note": note})
 }
 
-func (app *application) updateNote(w http.ResponseWriter, r *http.Request) {
+func (app *application) updateNoteHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
 		app.writeError(w, http.StatusForbidden)
 		return
 	}
 
-	id, err := strconv.ParseInt(r.URL.Path[len("/v1/notes/"):], 10, 64)
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		app.writeError(w, http.StatusBadRequest)
 		return
@@ -160,13 +144,13 @@ func (app *application) updateNote(w http.ResponseWriter, r *http.Request) {
 	app.writeJSON(w, http.StatusOK, envelope{"note": note})
 }
 
-func (app *application) deleteNote(w http.ResponseWriter, r *http.Request) {
+func (app *application) deleteNoteHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
 		app.writeError(w, http.StatusForbidden)
 		return
 	}
 
-	id, err := strconv.ParseInt(r.URL.Path[len("/v1/notes/"):], 10, 64)
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		app.writeError(w, http.StatusBadRequest)
 		return
