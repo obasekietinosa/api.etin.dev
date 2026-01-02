@@ -49,10 +49,7 @@ jobs:
         with:
           script: |
             const marker = '<!-- openapi-drift -->';
-            const body = `${marker}
-The generated OpenAPI document does not match the committed version.
-
-Run go run ./cmd/openapi -output cmd/api/openapi.json and commit the result, or comment "generate openapi spec" to have CI update it for you.`;
+            const body = `${marker}\nThe generated OpenAPI document does not match the committed version.\n\nRun go run ./cmd/openapi -output cmd/api/openapi.json and commit the result, or comment "generate openapi spec" to have CI update it for you.`;
             const prNumber = context.payload.pull_request.number;
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,

@@ -18,31 +18,6 @@
         ],
         "type": "object"
       },
-      "CreateTagRequest": {
-        "properties": {
-          "icon": {
-            "description": "Optional emoji or icon for the tag.",
-            "type": "string"
-          },
-          "name": {
-            "description": "Tag display name.",
-            "type": "string"
-          },
-          "slug": {
-            "description": "URL slug for the tag.",
-            "type": "string"
-          },
-          "theme": {
-            "description": "Optional theme identifier for the tag.",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name",
-          "slug"
-        ],
-        "type": "object"
-      },
       "AdminLoginResponse": {
         "properties": {
           "expiresAt": {
@@ -289,12 +264,6 @@
           "title": {
             "description": "Project title.",
             "type": "string"
-          },
-          "notes": {
-            "items": {
-              "$ref": "#/components/schemas/PublicNote"
-            },
-            "type": "array"
           }
         },
         "required": [
@@ -375,6 +344,31 @@
           "tagId",
           "itemId",
           "itemType"
+        ],
+        "type": "object"
+      },
+      "CreateTagRequest": {
+        "properties": {
+          "icon": {
+            "description": "Optional emoji or icon for the tag.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Tag display name.",
+            "type": "string"
+          },
+          "slug": {
+            "description": "URL slug for the tag.",
+            "type": "string"
+          },
+          "theme": {
+            "description": "Optional theme identifier for the tag.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "slug"
         ],
         "type": "object"
       },
@@ -673,8 +667,7 @@
           "image",
           "slug",
           "description",
-          "technologies",
-          "notes"
+          "technologies"
         ],
         "type": "object"
       },
@@ -738,12 +731,6 @@
           "title": {
             "description": "Role title.",
             "type": "string"
-          },
-          "notes": {
-            "items": {
-              "$ref": "#/components/schemas/PublicNote"
-            },
-            "type": "array"
           }
         },
         "required": [
@@ -754,8 +741,7 @@
           "companyIcon",
           "slug",
           "description",
-          "skills",
-          "notes"
+          "skills"
         ],
         "type": "object"
       },
@@ -920,14 +906,6 @@
         ],
         "type": "object"
       },
-      "TagResponse": {
-        "properties": {
-          "tag": {
-            "$ref": "#/components/schemas/Tag"
-          }
-        },
-        "type": "object"
-      },
       "TagItem": {
         "properties": {
           "id": {
@@ -978,6 +956,14 @@
               "$ref": "#/components/schemas/TagItem"
             },
             "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "TagResponse": {
+        "properties": {
+          "tag": {
+            "$ref": "#/components/schemas/Tag"
           }
         },
         "type": "object"
@@ -2460,205 +2446,6 @@
         ]
       }
     },
-    "/v1/tags": {
-      "get": {
-        "operationId": "listTags",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TagsResponse"
-                }
-              }
-            },
-            "description": "Tags retrieved."
-          },
-          "500": {
-            "description": "Server error retrieving tags."
-          }
-        },
-        "summary": "List tags",
-        "tags": [
-          "Tags"
-        ]
-      },
-      "post": {
-        "operationId": "createTag",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateTagRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TagResponse"
-                }
-              }
-            },
-            "description": "Tag created."
-          },
-          "400": {
-            "description": "Invalid payload."
-          },
-          "403": {
-            "description": "Missing or invalid bearer token."
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Create a tag",
-        "tags": [
-          "Tags"
-        ]
-      }
-    },
-    "/v1/tags/{tagId}": {
-      "delete": {
-        "operationId": "deleteTag",
-        "parameters": [
-          {
-            "description": "Identifier of the tag.",
-            "in": "path",
-            "name": "tagId",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Tag deleted."
-          },
-          "400": {
-            "description": "Invalid tag identifier."
-          },
-          "403": {
-            "description": "Missing or invalid bearer token."
-          },
-          "404": {
-            "description": "Tag not found."
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Delete a tag",
-        "tags": [
-          "Tags"
-        ]
-      },
-      "get": {
-        "operationId": "getTag",
-        "parameters": [
-          {
-            "description": "Identifier of the tag.",
-            "in": "path",
-            "name": "tagId",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TagResponse"
-                }
-              }
-            },
-            "description": "Tag retrieved."
-          },
-          "400": {
-            "description": "Invalid tag identifier."
-          },
-          "404": {
-            "description": "Tag not found."
-          }
-        },
-        "summary": "Retrieve a tag",
-        "tags": [
-          "Tags"
-        ]
-      },
-      "put": {
-        "operationId": "updateTag",
-        "parameters": [
-          {
-            "description": "Identifier of the tag.",
-            "in": "path",
-            "name": "tagId",
-            "required": true,
-            "schema": {
-              "format": "int64",
-              "type": "integer"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateTagRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TagResponse"
-                }
-              }
-            },
-            "description": "Tag updated."
-          },
-          "400": {
-            "description": "Invalid payload."
-          },
-          "403": {
-            "description": "Missing or invalid bearer token."
-          },
-          "404": {
-            "description": "Tag not found."
-          },
-          "500": {
-            "description": "Server error updating tag."
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "summary": "Update a tag",
-        "tags": [
-          "Tags"
-        ]
-      }
-    },
     "/v1/tagged-items": {
       "get": {
         "operationId": "listTagItems",
@@ -2908,6 +2695,205 @@
         "summary": "Update a tag association",
         "tags": [
           "Tag Items"
+        ]
+      }
+    },
+    "/v1/tags": {
+      "get": {
+        "operationId": "listTags",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagsResponse"
+                }
+              }
+            },
+            "description": "Tags retrieved."
+          },
+          "500": {
+            "description": "Server error retrieving tags."
+          }
+        },
+        "summary": "List tags",
+        "tags": [
+          "Tags"
+        ]
+      },
+      "post": {
+        "operationId": "createTag",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTagRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagResponse"
+                }
+              }
+            },
+            "description": "Tag created."
+          },
+          "400": {
+            "description": "Invalid payload."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a tag",
+        "tags": [
+          "Tags"
+        ]
+      }
+    },
+    "/v1/tags/{tagId}": {
+      "delete": {
+        "operationId": "deleteTag",
+        "parameters": [
+          {
+            "description": "Identifier of the tag.",
+            "in": "path",
+            "name": "tagId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Tag deleted."
+          },
+          "400": {
+            "description": "Invalid tag identifier."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          },
+          "404": {
+            "description": "Tag not found."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a tag",
+        "tags": [
+          "Tags"
+        ]
+      },
+      "get": {
+        "operationId": "getTag",
+        "parameters": [
+          {
+            "description": "Identifier of the tag.",
+            "in": "path",
+            "name": "tagId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagResponse"
+                }
+              }
+            },
+            "description": "Tag retrieved."
+          },
+          "400": {
+            "description": "Invalid tag identifier."
+          },
+          "404": {
+            "description": "Tag not found."
+          }
+        },
+        "summary": "Retrieve a tag",
+        "tags": [
+          "Tags"
+        ]
+      },
+      "put": {
+        "operationId": "updateTag",
+        "parameters": [
+          {
+            "description": "Identifier of the tag.",
+            "in": "path",
+            "name": "tagId",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTagRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagResponse"
+                }
+              }
+            },
+            "description": "Tag updated."
+          },
+          "400": {
+            "description": "Invalid payload."
+          },
+          "403": {
+            "description": "Missing or invalid bearer token."
+          },
+          "404": {
+            "description": "Tag not found."
+          },
+          "500": {
+            "description": "Server error updating tag."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update a tag",
+        "tags": [
+          "Tags"
         ]
       }
     }

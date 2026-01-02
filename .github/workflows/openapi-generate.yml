@@ -62,10 +62,7 @@ jobs:
           script: |
             const marker = '<!-- openapi-generate -->';
             const issueNumber = Number(process.env.PR_NUMBER);
-            const body = `${marker}
-Unable to update the OpenAPI document automatically for pull requests from forks.
-
-Please run go run ./cmd/openapi -output cmd/api/openapi.json locally and push the result.`;
+            const body = `${marker}\nUnable to update the OpenAPI document automatically for pull requests from forks.\n\nPlease run go run ./cmd/openapi -output cmd/api/openapi.json locally and push the result.`;
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -136,8 +133,7 @@ Please run go run ./cmd/openapi -output cmd/api/openapi.json locally and push th
           script: |
             const marker = '<!-- openapi-generate -->';
             const issueNumber = Number(process.env.PR_NUMBER);
-            const body = `${marker}
-The OpenAPI document has been regenerated and pushed to this branch.`;
+            const body = `${marker}\nThe OpenAPI document has been regenerated and pushed to this branch.`;
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -170,8 +166,7 @@ The OpenAPI document has been regenerated and pushed to this branch.`;
           script: |
             const marker = '<!-- openapi-generate -->';
             const issueNumber = Number(process.env.PR_NUMBER);
-            const body = `${marker}
-The OpenAPI document was already up to date.`;
+            const body = `${marker}\nThe OpenAPI document was already up to date.`;
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
