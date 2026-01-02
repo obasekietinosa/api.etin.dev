@@ -21,7 +21,7 @@ func (app *application) getNotesHandler(w http.ResponseWriter, r *http.Request) 
 
 func (app *application) createNoteHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 
@@ -86,7 +86,7 @@ func (app *application) getNoteHandler(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) updateNoteHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 
@@ -146,7 +146,7 @@ func (app *application) updateNoteHandler(w http.ResponseWriter, r *http.Request
 
 func (app *application) deleteNoteHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 

@@ -20,7 +20,7 @@ func (app *application) getTagsHandler(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) createTagHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 	var input struct {
@@ -67,7 +67,7 @@ func (app *application) getTagHandler(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) updateTagHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
@@ -116,7 +116,7 @@ func (app *application) updateTagHandler(w http.ResponseWriter, r *http.Request)
 
 func (app *application) deleteTagHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)

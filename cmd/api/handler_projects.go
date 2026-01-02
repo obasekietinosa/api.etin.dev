@@ -21,7 +21,7 @@ func (app *application) getProjectsHandler(w http.ResponseWriter, r *http.Reques
 
 func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 
@@ -77,7 +77,7 @@ func (app *application) getProjectHandler(w http.ResponseWriter, r *http.Request
 
 func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 
@@ -141,7 +141,7 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 
 func (app *application) deleteProjectHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 

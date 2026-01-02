@@ -12,7 +12,7 @@ import (
 
 func (app *application) getCreateContentNoteHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 
@@ -95,7 +95,7 @@ func (app *application) getCreateContentNoteHandler(w http.ResponseWriter, r *ht
 
 func (app *application) getContentNotesHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 
@@ -146,7 +146,7 @@ func (app *application) getContentNotesHandler(w http.ResponseWriter, r *http.Re
 
 func (app *application) getAllContentNotesHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 

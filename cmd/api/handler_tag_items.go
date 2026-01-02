@@ -22,7 +22,7 @@ func (app *application) getTagItemsHandler(w http.ResponseWriter, r *http.Reques
 
 func (app *application) createTagItemHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 
@@ -82,7 +82,7 @@ func (app *application) getTagItemHandler(w http.ResponseWriter, r *http.Request
 
 func (app *application) updateTagItemHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 
@@ -139,7 +139,7 @@ func (app *application) updateTagItemHandler(w http.ResponseWriter, r *http.Requ
 
 func (app *application) deleteTagItemHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 
