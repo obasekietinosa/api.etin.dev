@@ -30,7 +30,11 @@ func (q *DeleteQueryBuilder) buildQuery() (*string, error) {
 }
 
 func (q *DeleteQueryBuilder) WhereEqual(column string, value interface{}) *DeleteQueryBuilder {
-	q.queryBuilder.addCondition(column, value, "=", &q.conditions)
+	if value == nil {
+		q.queryBuilder.addCondition(column, nil, "IS NULL", &q.conditions)
+	} else {
+		q.queryBuilder.addCondition(column, value, "=", &q.conditions)
+	}
 	return q
 }
 
