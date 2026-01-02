@@ -586,6 +586,31 @@ func buildSchemas() map[string]any {
 				"asset": ref("Asset"),
 			},
 		},
+		"CreateTagRequest": map[string]any{
+			"type":     "object",
+			"required": []string{"name", "slug"},
+			"properties": map[string]any{
+				"name":  stringSchema("Tag display name."),
+				"slug":  stringSchema("URL slug for the tag."),
+				"icon":  stringSchema("Optional emoji or icon for the tag."),
+				"theme": stringSchema("Optional theme identifier for the tag."),
+			},
+		},
+		"UpdateTagRequest": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"name":  stringSchema("Tag display name."),
+				"slug":  stringSchema("URL slug for the tag."),
+				"icon":  stringSchema("Optional emoji or icon for the tag."),
+				"theme": stringSchema("Optional theme identifier for the tag."),
+			},
+		},
+		"TagResponse": map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"tag": ref("Tag"),
+			},
+		},
 	}
 }
 
@@ -1244,6 +1269,84 @@ func buildPaths() map[string]any {
 					"200": jsonResponse("Tags retrieved.", "TagsResponse"),
 					"400": noContent("Invalid item type or identifier."),
 					"500": noContent("Server error retrieving tags for the item."),
+				},
+			},
+		},
+		"/v1/tags": map[string]any{
+			"get": map[string]any{
+				"operationId": "listTags",
+				"summary":     "List tags",
+				"tags":        []string{"Tags"},
+				"responses": map[string]any{
+					"200": jsonResponse("Tags retrieved.", "TagsResponse"),
+					"500": noContent("Server error retrieving tags."),
+				},
+			},
+			"post": map[string]any{
+				"operationId": "createTag",
+				"summary":     "Create a tag",
+				"tags":        []string{"Tags"},
+				"security":    bearerSecurity,
+				"requestBody": map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"application/json": map[string]any{
+							"schema": ref("CreateTagRequest"),
+						},
+					},
+				},
+				"responses": map[string]any{
+					"201": jsonResponse("Tag created.", "TagResponse"),
+					"400": noContent("Invalid payload."),
+					"403": noContent("Missing or invalid bearer token."),
+				},
+			},
+		},
+		"/v1/tags/{tagId}": map[string]any{
+			"get": map[string]any{
+				"operationId": "getTag",
+				"summary":     "Retrieve a tag",
+				"tags":        []string{"Tags"},
+				"parameters":  []map[string]any{intPathParam("tagId", "Identifier of the tag.")},
+				"responses": map[string]any{
+					"200": jsonResponse("Tag retrieved.", "TagResponse"),
+					"400": noContent("Invalid tag identifier."),
+					"404": noContent("Tag not found."),
+				},
+			},
+			"put": map[string]any{
+				"operationId": "updateTag",
+				"summary":     "Update a tag",
+				"tags":        []string{"Tags"},
+				"security":    bearerSecurity,
+				"parameters":  []map[string]any{intPathParam("tagId", "Identifier of the tag.")},
+				"requestBody": map[string]any{
+					"required": true,
+					"content": map[string]any{
+						"application/json": map[string]any{
+							"schema": ref("UpdateTagRequest"),
+						},
+					},
+				},
+				"responses": map[string]any{
+					"200": jsonResponse("Tag updated.", "TagResponse"),
+					"400": noContent("Invalid payload."),
+					"403": noContent("Missing or invalid bearer token."),
+					"404": noContent("Tag not found."),
+					"500": noContent("Server error updating tag."),
+				},
+			},
+			"delete": map[string]any{
+				"operationId": "deleteTag",
+				"summary":     "Delete a tag",
+				"tags":        []string{"Tags"},
+				"security":    bearerSecurity,
+				"parameters":  []map[string]any{intPathParam("tagId", "Identifier of the tag.")},
+				"responses": map[string]any{
+					"204": noContent("Tag deleted."),
+					"400": noContent("Invalid tag identifier."),
+					"403": noContent("Missing or invalid bearer token."),
+					"404": noContent("Tag not found."),
 				},
 			},
 		},
