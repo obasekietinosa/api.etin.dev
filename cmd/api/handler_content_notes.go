@@ -151,6 +151,19 @@ func (app *application) getAllContentNotesHandler(w http.ResponseWriter, r *http
 	}
 
 	contentTypeStr := r.PathValue("contentType")
+
+	// If PathValue is empty, check if we can infer it from the URL path directly for specific routes
+	// like /v1/roles/notes
+	if contentTypeStr == "" {
+		path := r.URL.Path
+		// Expected /v1/{contentType}/notes
+		// e.g. /v1/roles/notes
+		parts := strings.Split(path, "/")
+		if len(parts) >= 3 {
+			contentTypeStr = parts[2]
+		}
+	}
+
 	if contentTypeStr == "" {
 		app.writeError(w, http.StatusBadRequest)
 		return

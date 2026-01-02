@@ -44,7 +44,9 @@ func (app *application) routes() http.Handler {
 
 	mux.HandleFunc("POST /v1/{contentType}/{id}/notes", app.getCreateContentNoteHandler)
 	mux.HandleFunc("GET /v1/{contentType}/{id}/notes", app.getContentNotesHandler)
-	mux.HandleFunc("GET /v1/{contentType}/notes", app.getAllContentNotesHandler)
+	// mux.HandleFunc("GET /v1/{contentType}/notes", app.getAllContentNotesHandler) -- Conflicts with GET /v1/roles/{id}
+	mux.HandleFunc("GET /v1/roles/notes", app.getAllContentNotesHandler)
+	mux.HandleFunc("GET /v1/projects/notes", app.getAllContentNotesHandler)
 
 	mux.Handle("GET /v1/projects", app.deployWebhook(http.HandlerFunc(app.getProjectsHandler)))
 	mux.Handle("POST /v1/projects", app.deployWebhook(http.HandlerFunc(app.createProjectHandler)))
