@@ -22,7 +22,7 @@ func (app *application) getItemNotesHandler(w http.ResponseWriter, r *http.Reque
 
 func (app *application) createItemNoteHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 
@@ -82,7 +82,7 @@ func (app *application) getItemNoteHandler(w http.ResponseWriter, r *http.Reques
 
 func (app *application) updateItemNoteHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 
@@ -139,7 +139,7 @@ func (app *application) updateItemNoteHandler(w http.ResponseWriter, r *http.Req
 
 func (app *application) deleteItemNoteHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 

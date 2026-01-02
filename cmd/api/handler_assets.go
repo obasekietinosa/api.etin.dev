@@ -17,7 +17,7 @@ type assetSaver interface {
 
 func (app *application) getCreateAssetsHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
-		app.writeError(w, http.StatusForbidden)
+		app.writeError(w, http.StatusUnauthorized)
 		return
 	}
 
