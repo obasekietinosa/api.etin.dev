@@ -26,7 +26,11 @@ func (q *UpdateQueryBuilder) buildPreparedStatementValues() []interface{} {
 }
 
 func (q *UpdateQueryBuilder) WhereEqual(column string, value interface{}) *UpdateQueryBuilder {
-	q.queryBuilder.addCondition(column, value, "=", &q.conditions)
+	if value == nil {
+		q.queryBuilder.addCondition(column, nil, "IS NULL", &q.conditions)
+	} else {
+		q.queryBuilder.addCondition(column, value, "=", &q.conditions)
+	}
 	return q
 }
 
