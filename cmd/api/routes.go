@@ -7,6 +7,8 @@ func (app *application) routes() http.Handler {
 
 	mux.HandleFunc("/swagger", app.swaggerHandler)
 	mux.HandleFunc("/public/v1/notes", app.getPublicNotesHandler)
+	mux.HandleFunc("GET /public/v1/{contentType}/{id}/notes", app.getPublicNotesForContentHandler)
+	mux.HandleFunc("GET /public/v1/{contentType}/notes", app.getPublicAllNotesForContentHandler)
 	mux.HandleFunc("/public/v1/projects", app.getPublicProjectsHandler)
 	mux.HandleFunc("/public/v1/roles", app.getPublicRolesHandler)
 	mux.HandleFunc("/v1/healthcheck", app.healthcheck)
@@ -26,6 +28,10 @@ func (app *application) routes() http.Handler {
 	mux.Handle("/v1/item-notes", app.deployWebhook(http.HandlerFunc(app.getCreateItemNotesHandler)))
 	mux.Handle("/v1/item-notes/", app.deployWebhook(http.HandlerFunc(app.getUpdateDeleteItemNotesHandler)))
 	mux.HandleFunc("/v1/item-notes/items/", app.getNotesForItemHandler)
+
+	mux.HandleFunc("POST /v1/{contentType}/{id}/notes", app.getCreateContentNoteHandler)
+	mux.HandleFunc("GET /v1/{contentType}/{id}/notes", app.getContentNotesHandler)
+	mux.HandleFunc("GET /v1/{contentType}/notes", app.getAllContentNotesHandler)
 
 	mux.Handle("/v1/projects", app.deployWebhook(http.HandlerFunc(app.getCreateProjectsHandler)))
 	mux.Handle("/v1/projects/", app.deployWebhook(http.HandlerFunc(app.getUpdateDeleteProjectsHandler)))
