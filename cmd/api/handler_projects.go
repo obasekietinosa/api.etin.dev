@@ -65,7 +65,7 @@ func (app *application) getUpdateDeleteProjectsHandler(w http.ResponseWriter, r 
 	switch r.Method {
 	case http.MethodGet:
 		app.getProject(w, r)
-	case http.MethodPut:
+	case http.MethodPut, http.MethodPatch:
 		app.updateProject(w, r)
 	case http.MethodDelete:
 		app.deleteProject(w, r)
