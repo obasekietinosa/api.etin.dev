@@ -20,6 +20,8 @@ type SelectQueryBuilder struct {
 	leftJoinTable      string
 	leftJoinOwnKey     string
 	leftJoinForeignKey string
+
+	limit int
 }
 
 func (q *SelectQueryBuilder) From(table string) *SelectQueryBuilder {
@@ -42,12 +44,27 @@ func (q *SelectQueryBuilder) OrderBy(column string, sortDirection string) *Selec
 	return q
 }
 
+func (q *SelectQueryBuilder) Limit(limit int) *SelectQueryBuilder {
+	q.limit = limit
+	return q
+}
+
 func (q *SelectQueryBuilder) WhereEqual(column string, value interface{}) *SelectQueryBuilder {
 	if value == nil {
 		q.queryBuilder.addCondition(column, nil, "IS NULL", &q.conditions)
 	} else {
 		q.queryBuilder.addCondition(column, value, "=", &q.conditions)
 	}
+	return q
+}
+
+func (q *SelectQueryBuilder) WhereLessThan(column string, value interface{}) *SelectQueryBuilder {
+	q.queryBuilder.addCondition(column, value, "<", &q.conditions)
+	return q
+}
+
+func (q *SelectQueryBuilder) WhereGreaterThan(column string, value interface{}) *SelectQueryBuilder {
+	q.queryBuilder.addCondition(column, value, ">", &q.conditions)
 	return q
 }
 
@@ -81,6 +98,10 @@ func (q *SelectQueryBuilder) buildQuery() (*string, error) {
 
 	if q.sortColumn != "" {
 		query += fmt.Sprintf(" ORDER BY %s %s", q.sortColumn, q.sortDirection)
+	}
+
+	if q.limit > 0 {
+		query += fmt.Sprintf(" LIMIT %d", q.limit)
 	}
 
 	return &query, nil

@@ -195,7 +195,22 @@ func (app *application) getNotesForItemHandler(w http.ResponseWriter, r *http.Re
 
 	itemType := data.ItemType(strings.ToLower(parts[0]))
 
-	notes, err := app.models.ItemNotes.GetNotesForItem(itemType, itemID)
+	filters := data.CursorFilters{
+		Limit: 20,
+	}
+
+	qs := r.URL.Query()
+	if cursor := qs.Get("cursor"); cursor != "" {
+		filters.Cursor = cursor
+	}
+	if limit := qs.Get("limit"); limit != "" {
+		l, err := strconv.Atoi(limit)
+		if err == nil && l > 0 {
+			filters.Limit = l
+		}
+	}
+
+	notes, metadata, err := app.models.ItemNotes.GetNotesForItem(itemType, itemID, filters)
 	if err != nil {
 		if errors.Is(err, data.ErrInvalidItemType) {
 			app.writeError(w, http.StatusBadRequest)
@@ -207,5 +222,5 @@ func (app *application) getNotesForItemHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, envelope{"notes": notes})
+	app.writeJSON(w, http.StatusOK, envelope{"notes": notes, "metadata": metadata})
 }

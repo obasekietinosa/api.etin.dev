@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -108,7 +110,7 @@ func (app *application) getPublicProjectsHandler(w http.ResponseWriter, r *http.
 			return
 		}
 
-		notes, err := app.models.ItemNotes.GetNotesForItem(data.ItemTypeProjects, project.ID)
+		notes, _, err := app.models.ItemNotes.GetNotesForItem(data.ItemTypeProjects, project.ID, data.CursorFilters{})
 		if err != nil {
 			app.logger.Printf("Error retrieving notes for project %d: %s", project.ID, err)
 			app.writeError(w, http.StatusInternalServerError)
@@ -148,7 +150,7 @@ func (app *application) getPublicRolesHandler(w http.ResponseWriter, r *http.Req
 	response := make([]publicRole, 0, len(roles))
 
 	for _, role := range roles {
-		notes, err := app.models.ItemNotes.GetNotesForItem(data.ItemTypeRoles, role.ID)
+		notes, _, err := app.models.ItemNotes.GetNotesForItem(data.ItemTypeRoles, role.ID, data.CursorFilters{})
 		if err != nil {
 			app.logger.Printf("Error retrieving notes for role %d: %s", role.ID, err)
 			app.writeError(w, http.StatusInternalServerError)
@@ -170,6 +172,126 @@ func (app *application) getPublicRolesHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"roles": response})
+}
+
+func (app *application) getPublicNotesForContentHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+
+	parts := strings.Split(r.URL.Path, "/")
+	// /public/v1/{contentType}/{id}/notes
+	if len(parts) != 6 || parts[5] != "notes" {
+		app.writeError(w, http.StatusBadRequest)
+		return
+	}
+
+	contentTypeStr := parts[3]
+	itemIDStr := parts[4]
+
+	itemID, err := strconv.ParseInt(itemIDStr, 10, 64)
+	if err != nil {
+		app.writeError(w, http.StatusBadRequest)
+		return
+	}
+
+	itemType := data.ItemType(strings.ToLower(contentTypeStr))
+
+	filters := data.CursorFilters{
+		Limit: 20,
+	}
+
+	qs := r.URL.Query()
+	if cursor := qs.Get("cursor"); cursor != "" {
+		filters.Cursor = cursor
+	}
+	if limit := qs.Get("limit"); limit != "" {
+		l, err := strconv.Atoi(limit)
+		if err == nil && l > 0 {
+			filters.Limit = l
+		}
+	}
+
+	notes, metadata, err := app.models.ItemNotes.GetNotesForItem(itemType, itemID, filters)
+	if err != nil {
+		if errors.Is(err, data.ErrInvalidItemType) {
+			app.writeError(w, http.StatusBadRequest)
+			return
+		}
+		app.logger.Printf("Error retrieving notes for %s item %d: %s", itemType, itemID, err)
+		app.writeError(w, http.StatusInternalServerError)
+		return
+	}
+
+	publicNotes := make([]publicNote, 0, len(notes))
+	for _, note := range notes {
+		noteTags, err := app.models.TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
+		if err != nil {
+			app.logger.Printf("Error retrieving tags for note %d: %s", note.ID, err)
+			app.writeError(w, http.StatusInternalServerError)
+			return
+		}
+		publicNotes = append(publicNotes, buildPublicNote(note, noteTags))
+	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"notes": publicNotes, "metadata": metadata})
+}
+
+func (app *application) getPublicAllNotesForContentHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+
+	parts := strings.Split(r.URL.Path, "/")
+	// /public/v1/{contentType}/notes
+	if len(parts) != 5 || parts[4] != "notes" {
+		app.writeError(w, http.StatusBadRequest)
+		return
+	}
+
+	contentTypeStr := parts[3]
+	itemType := data.ItemType(strings.ToLower(contentTypeStr))
+
+	filters := data.CursorFilters{
+		Limit: 20,
+	}
+
+	qs := r.URL.Query()
+	if cursor := qs.Get("cursor"); cursor != "" {
+		filters.Cursor = cursor
+	}
+	if limit := qs.Get("limit"); limit != "" {
+		l, err := strconv.Atoi(limit)
+		if err == nil && l > 0 {
+			filters.Limit = l
+		}
+	}
+
+	notes, metadata, err := app.models.ItemNotes.GetNotesForContentType(itemType, filters)
+	if err != nil {
+		if errors.Is(err, data.ErrInvalidItemType) {
+			app.writeError(w, http.StatusBadRequest)
+			return
+		}
+		app.logger.Printf("Error retrieving notes for content type %s: %s", itemType, err)
+		app.writeError(w, http.StatusInternalServerError)
+		return
+	}
+
+	publicNotes := make([]publicNote, 0, len(notes))
+	for _, note := range notes {
+		noteTags, err := app.models.TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
+		if err != nil {
+			app.logger.Printf("Error retrieving tags for note %d: %s", note.ID, err)
+			app.writeError(w, http.StatusInternalServerError)
+			return
+		}
+		publicNotes = append(publicNotes, buildPublicNote(note, noteTags))
+	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"notes": publicNotes, "metadata": metadata})
 }
 
 func buildPublicNote(note *data.Note, tags []*data.Tag) publicNote {
