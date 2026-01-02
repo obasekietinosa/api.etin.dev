@@ -9,78 +9,62 @@ import (
 	"api.etin.dev/internal/data"
 )
 
-func (app *application) getCreateItemNotesHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		itemNotes, err := app.models.ItemNotes.GetAll()
-		if err != nil {
-			app.logger.Printf("Error retrieving item note associations: %s", err)
-			app.writeError(w, http.StatusInternalServerError)
-			return
-		}
-
-		app.writeJSON(w, http.StatusOK, envelope{"itemNotes": itemNotes})
-	case http.MethodPost:
-		if !app.isRequestAuthenticated(r) {
-			app.writeError(w, http.StatusForbidden)
-			return
-		}
-
-		var input struct {
-			NoteID   int64  `json:"noteId"`
-			ItemID   int64  `json:"itemId"`
-			ItemType string `json:"itemType"`
-		}
-
-		if err := app.readJSON(w, r, &input); err != nil {
-			app.logger.Printf("Could not parse item note association payload: %s", err)
-			app.writeError(w, http.StatusBadRequest)
-			return
-		}
-
-		if input.NoteID < 1 || input.ItemID < 1 || strings.TrimSpace(input.ItemType) == "" {
-			app.writeError(w, http.StatusBadRequest)
-			return
-		}
-
-		itemNote := &data.ItemNote{
-			NoteID:   input.NoteID,
-			ItemID:   input.ItemID,
-			ItemType: data.ItemType(strings.ToLower(input.ItemType)),
-		}
-
-		if err := app.models.ItemNotes.Insert(itemNote); err != nil {
-			if errors.Is(err, data.ErrInvalidItemType) {
-				app.writeError(w, http.StatusBadRequest)
-				return
-			}
-
-			app.logger.Printf("Could not create item note association: %s", err)
-			app.writeError(w, http.StatusBadRequest)
-			return
-		}
-
-		app.writeJSON(w, http.StatusCreated, envelope{"itemNote": itemNote})
-	default:
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+func (app *application) getItemNotesHandler(w http.ResponseWriter, r *http.Request) {
+	itemNotes, err := app.models.ItemNotes.GetAll()
+	if err != nil {
+		app.logger.Printf("Error retrieving item note associations: %s", err)
+		app.writeError(w, http.StatusInternalServerError)
+		return
 	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"itemNotes": itemNotes})
 }
 
-func (app *application) getUpdateDeleteItemNotesHandler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		app.getItemNote(w, r)
-	case http.MethodPut:
-		app.updateItemNote(w, r)
-	case http.MethodDelete:
-		app.deleteItemNote(w, r)
-	default:
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+func (app *application) createItemNoteHandler(w http.ResponseWriter, r *http.Request) {
+	if !app.isRequestAuthenticated(r) {
+		app.writeError(w, http.StatusForbidden)
+		return
 	}
+
+	var input struct {
+		NoteID   int64  `json:"noteId"`
+		ItemID   int64  `json:"itemId"`
+		ItemType string `json:"itemType"`
+	}
+
+	if err := app.readJSON(w, r, &input); err != nil {
+		app.logger.Printf("Could not parse item note association payload: %s", err)
+		app.writeError(w, http.StatusBadRequest)
+		return
+	}
+
+	if input.NoteID < 1 || input.ItemID < 1 || strings.TrimSpace(input.ItemType) == "" {
+		app.writeError(w, http.StatusBadRequest)
+		return
+	}
+
+	itemNote := &data.ItemNote{
+		NoteID:   input.NoteID,
+		ItemID:   input.ItemID,
+		ItemType: data.ItemType(strings.ToLower(input.ItemType)),
+	}
+
+	if err := app.models.ItemNotes.Insert(itemNote); err != nil {
+		if errors.Is(err, data.ErrInvalidItemType) {
+			app.writeError(w, http.StatusBadRequest)
+			return
+		}
+
+		app.logger.Printf("Could not create item note association: %s", err)
+		app.writeError(w, http.StatusBadRequest)
+		return
+	}
+
+	app.writeJSON(w, http.StatusCreated, envelope{"itemNote": itemNote})
 }
 
-func (app *application) getItemNote(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.URL.Path[len("/v1/item-notes/"):], 10, 64)
+func (app *application) getItemNoteHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		app.writeError(w, http.StatusBadRequest)
 		return
@@ -96,13 +80,13 @@ func (app *application) getItemNote(w http.ResponseWriter, r *http.Request) {
 	app.writeJSON(w, http.StatusOK, envelope{"itemNote": itemNote})
 }
 
-func (app *application) updateItemNote(w http.ResponseWriter, r *http.Request) {
+func (app *application) updateItemNoteHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
 		app.writeError(w, http.StatusForbidden)
 		return
 	}
 
-	id, err := strconv.ParseInt(r.URL.Path[len("/v1/item-notes/"):], 10, 64)
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		app.writeError(w, http.StatusBadRequest)
 		return
@@ -153,13 +137,13 @@ func (app *application) updateItemNote(w http.ResponseWriter, r *http.Request) {
 	app.writeJSON(w, http.StatusOK, envelope{"itemNote": itemNote})
 }
 
-func (app *application) deleteItemNote(w http.ResponseWriter, r *http.Request) {
+func (app *application) deleteItemNoteHandler(w http.ResponseWriter, r *http.Request) {
 	if !app.isRequestAuthenticated(r) {
 		app.writeError(w, http.StatusForbidden)
 		return
 	}
 
-	id, err := strconv.ParseInt(r.URL.Path[len("/v1/item-notes/"):], 10, 64)
+	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		app.writeError(w, http.StatusBadRequest)
 		return
@@ -175,25 +159,25 @@ func (app *application) deleteItemNote(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) getNotesForItemHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
+	// r.PathValue("itemType") and r.PathValue("itemId") should be used now.
+	// But let's check how the route was defined:
+	// mux.HandleFunc("GET /v1/item-notes/items/{itemType}/{itemId}", app.getNotesForItemHandler)
 
-	path := strings.TrimPrefix(r.URL.Path, "/v1/item-notes/items/")
-	parts := strings.Split(path, "/")
-	if len(parts) != 2 {
+	itemTypeStr := r.PathValue("itemType")
+	itemIdStr := r.PathValue("itemId")
+
+	if itemTypeStr == "" || itemIdStr == "" {
 		app.writeError(w, http.StatusBadRequest)
 		return
 	}
 
-	itemID, err := strconv.ParseInt(parts[1], 10, 64)
+	itemID, err := strconv.ParseInt(itemIdStr, 10, 64)
 	if err != nil {
 		app.writeError(w, http.StatusBadRequest)
 		return
 	}
 
-	itemType := data.ItemType(strings.ToLower(parts[0]))
+	itemType := data.ItemType(strings.ToLower(itemTypeStr))
 
 	filters := data.CursorFilters{
 		Limit: 20,
@@ -217,7 +201,7 @@ func (app *application) getNotesForItemHandler(w http.ResponseWriter, r *http.Re
 			return
 		}
 
-		app.logger.Printf("Could not retrieve notes for %s item %d: %s", parts[0], itemID, err)
+		app.logger.Printf("Could not retrieve notes for %s item %d: %s", itemTypeStr, itemID, err)
 		app.writeError(w, http.StatusInternalServerError)
 		return
 	}

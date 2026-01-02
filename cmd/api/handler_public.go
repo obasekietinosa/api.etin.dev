@@ -59,11 +59,6 @@ type publicRole struct {
 var slugPattern = regexp.MustCompile(`[^a-z0-9]+`)
 
 func (app *application) getPublicNotesHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
-
 	notes, err := app.models.Notes.GetAll()
 	if err != nil {
 		app.logger.Printf("Error retrieving notes: %s", err)
@@ -88,11 +83,6 @@ func (app *application) getPublicNotesHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (app *application) getPublicProjectsHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
-
 	projects, err := app.models.Projects.GetAll()
 	if err != nil {
 		app.logger.Printf("Error retrieving projects: %s", err)
@@ -135,11 +125,6 @@ func (app *application) getPublicProjectsHandler(w http.ResponseWriter, r *http.
 }
 
 func (app *application) getPublicRolesHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
-
 	roles, err := app.models.Roles.GetAll()
 	if err != nil {
 		app.logger.Printf("Error retrieving roles: %s", err)
@@ -175,20 +160,16 @@ func (app *application) getPublicRolesHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (app *application) getPublicNotesForContentHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
+	// Replaced manual path parsing with r.PathValue
+	// Pattern: GET /public/v1/{contentType}/{id}/notes
 
-	parts := strings.Split(r.URL.Path, "/")
-	// /public/v1/{contentType}/{id}/notes
-	if len(parts) != 6 || parts[5] != "notes" {
+	contentTypeStr := r.PathValue("contentType")
+	itemIDStr := r.PathValue("id")
+
+	if contentTypeStr == "" || itemIDStr == "" {
 		app.writeError(w, http.StatusBadRequest)
 		return
 	}
-
-	contentTypeStr := parts[3]
-	itemIDStr := parts[4]
 
 	itemID, err := strconv.ParseInt(itemIDStr, 10, 64)
 	if err != nil {
@@ -239,19 +220,15 @@ func (app *application) getPublicNotesForContentHandler(w http.ResponseWriter, r
 }
 
 func (app *application) getPublicAllNotesForContentHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
+	// Replaced manual path parsing with r.PathValue
+	// Pattern: GET /public/v1/{contentType}/notes
 
-	parts := strings.Split(r.URL.Path, "/")
-	// /public/v1/{contentType}/notes
-	if len(parts) != 5 || parts[4] != "notes" {
+	contentTypeStr := r.PathValue("contentType")
+	if contentTypeStr == "" {
 		app.writeError(w, http.StatusBadRequest)
 		return
 	}
 
-	contentTypeStr := parts[3]
 	itemType := data.ItemType(strings.ToLower(contentTypeStr))
 
 	filters := data.CursorFilters{

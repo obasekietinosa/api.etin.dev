@@ -6,11 +6,6 @@ import (
 )
 
 func (app *application) adminLoginHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
-
 	var input struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -45,11 +40,6 @@ func (app *application) adminLoginHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) adminLogoutHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
-
 	token, err := parseBearerToken(r.Header.Get("Authorization"))
 	if err != nil || !app.sessions.validate(token) {
 		app.writeError(w, http.StatusUnauthorized)

@@ -11,36 +11,17 @@ import (
 )
 
 func (app *application) getCreateContentNoteHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
-
 	if !app.isRequestAuthenticated(r) {
 		app.writeError(w, http.StatusForbidden)
 		return
 	}
 
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) < 4 { // Expecting /v1/{contentType}/{id}/notes
+	contentTypeStr := r.PathValue("contentType")
+	itemIDStr := r.PathValue("id")
+
+	if contentTypeStr == "" || itemIDStr == "" {
 		app.writeError(w, http.StatusBadRequest)
 		return
-	}
-
-	contentTypeStr := parts[2]
-	itemIDStr := parts[3]
-
-	// Find where "notes" is to ensure we have the correct path structure?
-	// The route is /v1/{contentType}/{id}/notes.
-	// parts[0] = ""
-	// parts[1] = "v1"
-	// parts[2] = contentType
-	// parts[3] = id
-	// parts[4] = "notes"
-
-	if len(parts) != 5 || parts[4] != "notes" {
-		 app.writeError(w, http.StatusBadRequest)
-		 return
 	}
 
 	itemID, err := strconv.ParseInt(itemIDStr, 10, 64)
@@ -113,25 +94,18 @@ func (app *application) getCreateContentNoteHandler(w http.ResponseWriter, r *ht
 }
 
 func (app *application) getContentNotesHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
-
 	if !app.isRequestAuthenticated(r) {
 		app.writeError(w, http.StatusForbidden)
 		return
 	}
 
-	parts := strings.Split(r.URL.Path, "/")
-	// /v1/{contentType}/{id}/notes
-	if len(parts) != 5 || parts[4] != "notes" {
+	contentTypeStr := r.PathValue("contentType")
+	itemIDStr := r.PathValue("id")
+
+	if contentTypeStr == "" || itemIDStr == "" {
 		app.writeError(w, http.StatusBadRequest)
 		return
 	}
-
-	contentTypeStr := parts[2]
-	itemIDStr := parts[3]
 
 	itemID, err := strconv.ParseInt(itemIDStr, 10, 64)
 	if err != nil {
@@ -171,24 +145,17 @@ func (app *application) getContentNotesHandler(w http.ResponseWriter, r *http.Re
 }
 
 func (app *application) getAllContentNotesHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
-
 	if !app.isRequestAuthenticated(r) {
 		app.writeError(w, http.StatusForbidden)
 		return
 	}
 
-	parts := strings.Split(r.URL.Path, "/")
-	// /v1/{contentType}/notes
-	if len(parts) != 4 || parts[3] != "notes" {
+	contentTypeStr := r.PathValue("contentType")
+	if contentTypeStr == "" {
 		app.writeError(w, http.StatusBadRequest)
 		return
 	}
 
-	contentTypeStr := parts[2]
 	itemType := data.ItemType(strings.ToLower(contentTypeStr))
 
 	filters := data.CursorFilters{
