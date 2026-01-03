@@ -5,7 +5,10 @@ import (
 	"errors"
 	"time"
 
+	"fmt"
+
 	"api.etin.dev/pkg/querybuilder"
+	"github.com/gosimple/slug"
 )
 
 type Note struct {
@@ -16,6 +19,7 @@ type Note struct {
 	PublishedAt *time.Time `json:"publishedAt,omitempty"`
 	Title       string     `json:"title"`
 	Subtitle    string     `json:"subtitle"`
+	Slug        string     `json:"slug"`
 	Body        string     `json:"body"`
 }
 
@@ -30,22 +34,32 @@ func (n NoteModel) Insert(note *Note) error {
 		publishedAt = *note.PublishedAt
 	}
 
+	if note.Slug == "" {
+		note.Slug = slug.Make(note.Title)
+	}
+
+	if err := n.ensureUniqueSlug(note); err != nil {
+		return err
+	}
+
 	values := querybuilder.Clauses{
 		querybuilder.Clause{ColumnName: "publishedAt", Value: publishedAt},
 		querybuilder.Clause{ColumnName: "title", Value: note.Title},
 		querybuilder.Clause{ColumnName: "subtitle", Value: note.Subtitle},
+		querybuilder.Clause{ColumnName: "slug", Value: note.Slug},
 		querybuilder.Clause{ColumnName: "body", Value: note.Body},
 	}
 
-	row, err := n.Query.SetBaseTable("notes").Insert(values).Returning("id", "createdAt", "updatedAt", "deletedAt", "publishedAt").QueryRow()
+	row, err := n.Query.SetBaseTable("notes").Insert(values).Returning("id", "createdAt", "updatedAt", "deletedAt", "publishedAt", "slug").QueryRow()
 	if err != nil {
 		return err
 	}
 
 	var deletedAt sql.NullTime
 	var published sql.NullTime
+	var slug sql.NullString
 
-	err = row.Scan(&note.ID, &note.CreatedAt, &note.UpdatedAt, &deletedAt, &published)
+	err = row.Scan(&note.ID, &note.CreatedAt, &note.UpdatedAt, &deletedAt, &published, &slug)
 	if err != nil {
 		return err
 	}
@@ -58,6 +72,10 @@ func (n NoteModel) Insert(note *Note) error {
 		note.PublishedAt = &published.Time
 	} else {
 		note.PublishedAt = nil
+	}
+
+	if slug.Valid {
+		note.Slug = slug.String
 	}
 
 	return nil
@@ -76,6 +94,7 @@ func (n NoteModel) Get(id int64) (*Note, error) {
 		"publishedAt",
 		"title",
 		"subtitle",
+		"slug",
 		"body",
 	).WhereEqual("deletedAt", nil).WhereEqual("id", id).QueryRow()
 	if err != nil {
@@ -85,6 +104,7 @@ func (n NoteModel) Get(id int64) (*Note, error) {
 	var note Note
 	var deletedAt sql.NullTime
 	var publishedAt sql.NullTime
+	var slug sql.NullString
 
 	err = row.Scan(
 		&note.ID,
@@ -94,6 +114,7 @@ func (n NoteModel) Get(id int64) (*Note, error) {
 		&publishedAt,
 		&note.Title,
 		&note.Subtitle,
+		&slug,
 		&note.Body,
 	)
 	if err != nil {
@@ -111,6 +132,10 @@ func (n NoteModel) Get(id int64) (*Note, error) {
 		note.PublishedAt = &publishedAt.Time
 	}
 
+	if slug.Valid {
+		note.Slug = slug.String
+	}
+
 	return &note, nil
 }
 
@@ -120,16 +145,25 @@ func (n NoteModel) Update(note *Note) error {
 		publishedAt = *note.PublishedAt
 	}
 
+	if note.Slug == "" {
+		note.Slug = slug.Make(note.Title)
+	}
+
+	if err := n.ensureUniqueSlug(note); err != nil {
+		return err
+	}
+
 	values := querybuilder.Clauses{
 		querybuilder.Clause{ColumnName: "publishedAt", Value: publishedAt},
 		querybuilder.Clause{ColumnName: "title", Value: note.Title},
 		querybuilder.Clause{ColumnName: "subtitle", Value: note.Subtitle},
+		querybuilder.Clause{ColumnName: "slug", Value: note.Slug},
 		querybuilder.Clause{ColumnName: "body", Value: note.Body},
 		querybuilder.Clause{ColumnName: "updatedAt", Value: time.Now()},
 	}
 
 	row, err := n.Query.With(
-		n.Query.SetBaseTable("notes").Update(values).WhereEqual("id", note.ID).WhereEqual("deletedAt", nil).Returning("id", "createdAt", "updatedAt", "deletedAt", "publishedAt", "title", "subtitle", "body"),
+		n.Query.SetBaseTable("notes").Update(values).WhereEqual("id", note.ID).WhereEqual("deletedAt", nil).Returning("id", "createdAt", "updatedAt", "deletedAt", "publishedAt", "title", "subtitle", "slug", "body"),
 		"updated_note",
 	).Select(
 		"updated_note.id",
@@ -139,6 +173,7 @@ func (n NoteModel) Update(note *Note) error {
 		"updated_note.publishedAt",
 		"updated_note.title",
 		"updated_note.subtitle",
+		"updated_note.slug",
 		"updated_note.body",
 	).From("updated_note").QueryRow()
 	if err != nil {
@@ -147,6 +182,7 @@ func (n NoteModel) Update(note *Note) error {
 
 	var deletedAt sql.NullTime
 	var published sql.NullTime
+	var slug sql.NullString
 
 	err = row.Scan(
 		&note.ID,
@@ -156,6 +192,7 @@ func (n NoteModel) Update(note *Note) error {
 		&published,
 		&note.Title,
 		&note.Subtitle,
+		&slug,
 		&note.Body,
 	)
 	if err != nil {
@@ -172,6 +209,10 @@ func (n NoteModel) Update(note *Note) error {
 		note.PublishedAt = &published.Time
 	} else {
 		note.PublishedAt = nil
+	}
+
+	if slug.Valid {
+		note.Slug = slug.String
 	}
 
 	return nil
@@ -213,6 +254,7 @@ func (n NoteModel) GetAll() ([]*Note, error) {
 		"publishedAt",
 		"title",
 		"subtitle",
+		"slug",
 		"body",
 	).WhereEqual("deletedAt", nil).OrderBy("COALESCE(publishedAt, createdAt)", "desc").Query()
 	if err != nil {
@@ -227,6 +269,7 @@ func (n NoteModel) GetAll() ([]*Note, error) {
 		var note Note
 		var deletedAt sql.NullTime
 		var publishedAt sql.NullTime
+		var slug sql.NullString
 
 		err := rows.Scan(
 			&note.ID,
@@ -236,6 +279,7 @@ func (n NoteModel) GetAll() ([]*Note, error) {
 			&publishedAt,
 			&note.Title,
 			&note.Subtitle,
+			&slug,
 			&note.Body,
 		)
 		if err != nil {
@@ -250,6 +294,10 @@ func (n NoteModel) GetAll() ([]*Note, error) {
 			note.PublishedAt = &publishedAt.Time
 		}
 
+		if slug.Valid {
+			note.Slug = slug.String
+		}
+
 		notes = append(notes, &note)
 	}
 
@@ -258,4 +306,87 @@ func (n NoteModel) GetAll() ([]*Note, error) {
 	}
 
 	return notes, nil
+}
+
+func (n NoteModel) GetBySlug(slug string) (*Note, error) {
+	row, err := n.Query.SetBaseTable("notes").Select(
+		"id",
+		"createdAt",
+		"updatedAt",
+		"deletedAt",
+		"publishedAt",
+		"title",
+		"subtitle",
+		"slug",
+		"body",
+	).WhereEqual("deletedAt", nil).WhereEqual("slug", slug).QueryRow()
+	if err != nil {
+		return nil, err
+	}
+
+	var note Note
+	var deletedAt sql.NullTime
+	var publishedAt sql.NullTime
+	var slugVal sql.NullString
+
+	err = row.Scan(
+		&note.ID,
+		&note.CreatedAt,
+		&note.UpdatedAt,
+		&deletedAt,
+		&publishedAt,
+		&note.Title,
+		&note.Subtitle,
+		&slugVal,
+		&note.Body,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("record not found")
+		}
+		return nil, err
+	}
+
+	if deletedAt.Valid {
+		note.DeletedAt = &deletedAt.Time
+	}
+
+	if publishedAt.Valid {
+		note.PublishedAt = &publishedAt.Time
+	}
+
+	if slugVal.Valid {
+		note.Slug = slugVal.String
+	}
+
+	return &note, nil
+}
+
+func (n NoteModel) ensureUniqueSlug(note *Note) error {
+	originalSlug := note.Slug
+	counter := 1
+
+	for {
+		var count int
+		row, err := n.Query.SetBaseTable("notes").Select("COUNT(*)").
+			WhereEqual("slug", note.Slug).
+			WhereNotEqual("id", note.ID).
+			WhereEqual("deletedAt", nil).
+			QueryRow()
+		if err != nil {
+			return err
+		}
+
+		if err := row.Scan(&count); err != nil {
+			return err
+		}
+
+		if count == 0 {
+			break
+		}
+
+		note.Slug = fmt.Sprintf("%s-%d", originalSlug, counter)
+		counter++
+	}
+	return nil
 }

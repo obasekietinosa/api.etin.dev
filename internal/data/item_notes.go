@@ -102,6 +102,7 @@ func (i ItemNoteModel) GetNotesForItem(itemType ItemType, itemID int64, filters 
 		"notes.publishedAt AS publishedAt",
 		"notes.title AS title",
 		"notes.subtitle AS subtitle",
+		"notes.slug AS slug",
 		"notes.body AS body",
 	).LeftJoin("notes", "noteId", "id").
 		WhereEqual("item_notes.itemId", itemID).
@@ -145,6 +146,7 @@ func (i ItemNoteModel) GetNotesForItem(itemType ItemType, itemID int64, filters 
 			&publishedAt,
 			&note.Title,
 			&note.Subtitle,
+			&note.Slug,
 			&note.Body,
 		); err != nil {
 			return nil, Metadata{}, err
@@ -187,6 +189,7 @@ func (i ItemNoteModel) GetNotesForContentType(itemType ItemType, filters CursorF
 		"notes.publishedAt AS publishedAt",
 		"notes.title AS title",
 		"notes.subtitle AS subtitle",
+		"notes.slug AS slug",
 		"notes.body AS body",
 	).LeftJoin("notes", "noteId", "id").
 		WhereEqual("item_notes.itemType", string(itemType)).
@@ -229,6 +232,7 @@ func (i ItemNoteModel) GetNotesForContentType(itemType ItemType, filters CursorF
 			&publishedAt,
 			&note.Title,
 			&note.Subtitle,
+			&note.Slug,
 			&note.Body,
 		); err != nil {
 			return nil, Metadata{}, err

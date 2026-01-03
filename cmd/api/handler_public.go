@@ -23,6 +23,7 @@ type publicNote struct {
 	ID          int64       `json:"id"`
 	PublishedAt string      `json:"publishedAt"`
 	Title       string      `json:"title"`
+	Slug        string      `json:"slug"`
 	Preview     string      `json:"preview"`
 	Body        string      `json:"body"`
 	IsFeatured  bool        `json:"isFeatured"`
@@ -283,6 +284,7 @@ func buildPublicNote(note *data.Note, tags []*data.Tag) publicNote {
 		ID:          note.ID,
 		PublishedAt: publishedAt,
 		Title:       note.Title,
+		Slug:        note.Slug,
 		Preview:     buildPreview(note.Subtitle, note.Body),
 		Body:        note.Body,
 		IsFeatured:  hasFeaturedTag(publicTags),
@@ -328,7 +330,7 @@ func buildPublicProject(project *data.Project, tags []*data.Tag, notes []publicN
 		EndDate:      endDate,
 		Title:        project.Title,
 		Image:        image,
-		Slug:         slugify(project.Title),
+		Slug:         project.Slug,
 		Status:       status,
 		Description:  project.Description,
 		Technologies: technologies,

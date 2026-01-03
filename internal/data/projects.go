@@ -3,9 +3,11 @@ package data
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"api.etin.dev/pkg/querybuilder"
+	"github.com/gosimple/slug"
 )
 
 type Project struct {
@@ -16,6 +18,7 @@ type Project struct {
 	StartDate   time.Time  `json:"startDate"`
 	EndDate     *time.Time `json:"endDate,omitempty"`
 	Title       string     `json:"title"`
+	Slug        string     `json:"slug"`
 	Description string     `json:"description"`
 	ImageURL    *string    `json:"imageUrl,omitempty"`
 }
@@ -36,10 +39,19 @@ func (p ProjectModel) Insert(project *Project) error {
 		imageURL = *project.ImageURL
 	}
 
+	if project.Slug == "" {
+		project.Slug = slug.Make(project.Title)
+	}
+
+	if err := p.ensureUniqueSlug(project); err != nil {
+		return err
+	}
+
 	values := querybuilder.Clauses{
 		{ColumnName: "startDate", Value: project.StartDate},
 		{ColumnName: "endDate", Value: endDate},
 		{ColumnName: "title", Value: project.Title},
+		{ColumnName: "slug", Value: project.Slug},
 		{ColumnName: "description", Value: project.Description},
 		{ColumnName: "imageUrl", Value: imageURL},
 	}
@@ -52,6 +64,7 @@ func (p ProjectModel) Insert(project *Project) error {
 		"startDate",
 		"endDate",
 		"title",
+		"slug",
 		"description",
 		"imageUrl",
 	).QueryRow()
@@ -62,6 +75,7 @@ func (p ProjectModel) Insert(project *Project) error {
 	var deletedAt sql.NullTime
 	var savedEndDate sql.NullTime
 	var savedImageURL sql.NullString
+	var slug sql.NullString
 
 	err = row.Scan(
 		&project.ID,
@@ -71,6 +85,7 @@ func (p ProjectModel) Insert(project *Project) error {
 		&project.StartDate,
 		&savedEndDate,
 		&project.Title,
+		&slug,
 		&project.Description,
 		&savedImageURL,
 	)
@@ -96,6 +111,10 @@ func (p ProjectModel) Insert(project *Project) error {
 		project.ImageURL = nil
 	}
 
+	if slug.Valid {
+		project.Slug = slug.String
+	}
+
 	return nil
 }
 
@@ -112,6 +131,7 @@ func (p ProjectModel) Get(projectID int64) (*Project, error) {
 		"startDate",
 		"endDate",
 		"title",
+		"slug",
 		"description",
 		"imageUrl",
 	).WhereEqual("deletedAt", nil).WhereEqual("id", projectID).QueryRow()
@@ -123,6 +143,7 @@ func (p ProjectModel) Get(projectID int64) (*Project, error) {
 	var deletedAt sql.NullTime
 	var endDate sql.NullTime
 	var imageURL sql.NullString
+	var slug sql.NullString
 
 	err = row.Scan(
 		&project.ID,
@@ -132,6 +153,7 @@ func (p ProjectModel) Get(projectID int64) (*Project, error) {
 		&project.StartDate,
 		&endDate,
 		&project.Title,
+		&slug,
 		&project.Description,
 		&imageURL,
 	)
@@ -154,6 +176,10 @@ func (p ProjectModel) Get(projectID int64) (*Project, error) {
 		project.ImageURL = &imageURL.String
 	}
 
+	if slug.Valid {
+		project.Slug = slug.String
+	}
+
 	return &project, nil
 }
 
@@ -168,10 +194,19 @@ func (p ProjectModel) Update(project *Project) error {
 		imageURL = *project.ImageURL
 	}
 
+	if project.Slug == "" {
+		project.Slug = slug.Make(project.Title)
+	}
+
+	if err := p.ensureUniqueSlug(project); err != nil {
+		return err
+	}
+
 	values := querybuilder.Clauses{
 		{ColumnName: "startDate", Value: project.StartDate},
 		{ColumnName: "endDate", Value: endDate},
 		{ColumnName: "title", Value: project.Title},
+		{ColumnName: "slug", Value: project.Slug},
 		{ColumnName: "description", Value: project.Description},
 		{ColumnName: "imageUrl", Value: imageURL},
 		{ColumnName: "updatedAt", Value: time.Now()},
@@ -185,6 +220,7 @@ func (p ProjectModel) Update(project *Project) error {
 		"startDate",
 		"endDate",
 		"title",
+		"slug",
 		"description",
 		"imageUrl",
 	).QueryRow()
@@ -195,6 +231,7 @@ func (p ProjectModel) Update(project *Project) error {
 	var deletedAt sql.NullTime
 	var savedEndDate sql.NullTime
 	var savedImageURL sql.NullString
+	var slug sql.NullString
 
 	err = row.Scan(
 		&project.ID,
@@ -204,6 +241,7 @@ func (p ProjectModel) Update(project *Project) error {
 		&project.StartDate,
 		&savedEndDate,
 		&project.Title,
+		&slug,
 		&project.Description,
 		&savedImageURL,
 	)
@@ -227,6 +265,10 @@ func (p ProjectModel) Update(project *Project) error {
 		project.ImageURL = &savedImageURL.String
 	} else {
 		project.ImageURL = nil
+	}
+
+	if slug.Valid {
+		project.Slug = slug.String
 	}
 
 	return nil
@@ -268,6 +310,7 @@ func (p ProjectModel) GetAll() ([]*Project, error) {
 		"startDate",
 		"endDate",
 		"title",
+		"slug",
 		"description",
 		"imageUrl",
 	).WhereEqual("deletedAt", nil).OrderBy("startDate", "desc").Query()
@@ -284,6 +327,7 @@ func (p ProjectModel) GetAll() ([]*Project, error) {
 		var deletedAt sql.NullTime
 		var endDate sql.NullTime
 		var imageURL sql.NullString
+		var slug sql.NullString
 
 		err := rows.Scan(
 			&project.ID,
@@ -293,6 +337,7 @@ func (p ProjectModel) GetAll() ([]*Project, error) {
 			&project.StartDate,
 			&endDate,
 			&project.Title,
+			&slug,
 			&project.Description,
 			&imageURL,
 		)
@@ -312,6 +357,10 @@ func (p ProjectModel) GetAll() ([]*Project, error) {
 			project.ImageURL = &imageURL.String
 		}
 
+		if slug.Valid {
+			project.Slug = slug.String
+		}
+
 		projects = append(projects, &project)
 	}
 
@@ -320,4 +369,94 @@ func (p ProjectModel) GetAll() ([]*Project, error) {
 	}
 
 	return projects, nil
+}
+
+func (p ProjectModel) GetBySlug(slug string) (*Project, error) {
+	row, err := p.Query.SetBaseTable("projects").Select(
+		"id",
+		"createdAt",
+		"updatedAt",
+		"deletedAt",
+		"startDate",
+		"endDate",
+		"title",
+		"slug",
+		"description",
+		"imageUrl",
+	).WhereEqual("deletedAt", nil).WhereEqual("slug", slug).QueryRow()
+	if err != nil {
+		return nil, err
+	}
+
+	var project Project
+	var deletedAt sql.NullTime
+	var endDate sql.NullTime
+	var imageURL sql.NullString
+	var slugVal sql.NullString
+
+	err = row.Scan(
+		&project.ID,
+		&project.CreatedAt,
+		&project.UpdatedAt,
+		&deletedAt,
+		&project.StartDate,
+		&endDate,
+		&project.Title,
+		&slugVal,
+		&project.Description,
+		&imageURL,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("record not found")
+		}
+		return nil, err
+	}
+
+	if deletedAt.Valid {
+		project.DeletedAt = &deletedAt.Time
+	}
+
+	if endDate.Valid {
+		project.EndDate = &endDate.Time
+	}
+
+	if imageURL.Valid {
+		project.ImageURL = &imageURL.String
+	}
+
+	if slugVal.Valid {
+		project.Slug = slugVal.String
+	}
+
+	return &project, nil
+}
+
+func (p ProjectModel) ensureUniqueSlug(project *Project) error {
+	originalSlug := project.Slug
+	counter := 1
+
+	for {
+		var count int
+		row, err := p.Query.SetBaseTable("projects").Select("COUNT(*)").
+			WhereEqual("slug", project.Slug).
+			WhereNotEqual("id", project.ID).
+			WhereEqual("deletedAt", nil).
+			QueryRow()
+		if err != nil {
+			return err
+		}
+
+		if err := row.Scan(&count); err != nil {
+			return err
+		}
+
+		if count == 0 {
+			break
+		}
+
+		project.Slug = fmt.Sprintf("%s-%d", originalSlug, counter)
+		counter++
+	}
+	return nil
 }

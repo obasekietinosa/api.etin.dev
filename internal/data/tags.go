@@ -3,9 +3,11 @@ package data
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"api.etin.dev/pkg/querybuilder"
+	"github.com/gosimple/slug"
 )
 
 type Tag struct {
@@ -35,6 +37,14 @@ func (t TagModel) Insert(tag *Tag) error {
 		theme = *tag.Theme
 	}
 
+	if tag.Slug == "" {
+		tag.Slug = slug.Make(tag.Name)
+	}
+
+	if err := t.ensureUniqueSlug(tag); err != nil {
+		return err
+	}
+
 	values := querybuilder.Clauses{
 		{ColumnName: "name", Value: tag.Name},
 		{ColumnName: "slug", Value: tag.Slug},
@@ -57,12 +67,14 @@ func (t TagModel) Insert(tag *Tag) error {
 	var deletedAt sql.NullTime
 	var iconValue sql.NullString
 	var themeValue sql.NullString
+	var slug sql.NullString
 
 	if err := row.Scan(
 		&tag.ID,
 		&tag.CreatedAt,
 		&tag.UpdatedAt,
 		&deletedAt,
+		&slug,
 		&iconValue,
 		&themeValue,
 	); err != nil {
@@ -87,6 +99,10 @@ func (t TagModel) Insert(tag *Tag) error {
 		tag.Theme = &value
 	} else {
 		tag.Theme = nil
+	}
+
+	if slug.Valid {
+		tag.Slug = slug.String
 	}
 
 	return nil
@@ -115,6 +131,7 @@ func (t TagModel) Get(id int64) (*Tag, error) {
 	var deletedAt sql.NullTime
 	var iconValue sql.NullString
 	var themeValue sql.NullString
+	var slug sql.NullString
 
 	if err := row.Scan(
 		&tag.ID,
@@ -122,7 +139,7 @@ func (t TagModel) Get(id int64) (*Tag, error) {
 		&tag.UpdatedAt,
 		&deletedAt,
 		&tag.Name,
-		&tag.Slug,
+		&slug,
 		&iconValue,
 		&themeValue,
 	); err != nil {
@@ -146,6 +163,10 @@ func (t TagModel) Get(id int64) (*Tag, error) {
 		tag.Theme = &value
 	}
 
+	if slug.Valid {
+		tag.Slug = slug.String
+	}
+
 	return &tag, nil
 }
 
@@ -158,6 +179,14 @@ func (t TagModel) Update(tag *Tag) error {
 	var theme interface{}
 	if tag.Theme != nil {
 		theme = *tag.Theme
+	}
+
+	if tag.Slug == "" {
+		tag.Slug = slug.Make(tag.Name)
+	}
+
+	if err := t.ensureUniqueSlug(tag); err != nil {
+		return err
 	}
 
 	values := querybuilder.Clauses{
@@ -185,6 +214,7 @@ func (t TagModel) Update(tag *Tag) error {
 	var deletedAt sql.NullTime
 	var iconValue sql.NullString
 	var themeValue sql.NullString
+	var slug sql.NullString
 
 	if err := row.Scan(
 		&tag.ID,
@@ -192,7 +222,7 @@ func (t TagModel) Update(tag *Tag) error {
 		&tag.UpdatedAt,
 		&deletedAt,
 		&tag.Name,
-		&tag.Slug,
+		&slug,
 		&iconValue,
 		&themeValue,
 	); err != nil {
@@ -219,6 +249,97 @@ func (t TagModel) Update(tag *Tag) error {
 		tag.Theme = nil
 	}
 
+	if slug.Valid {
+		tag.Slug = slug.String
+	}
+
+	return nil
+}
+
+func (t TagModel) GetBySlug(slugVal string) (*Tag, error) {
+	row, err := t.Query.SetBaseTable("tags").Select(
+		"id",
+		"createdAt",
+		"updatedAt",
+		"deletedAt",
+		"name",
+		"slug",
+		"icon",
+		"theme",
+	).WhereEqual("deletedAt", nil).WhereEqual("slug", slugVal).QueryRow()
+	if err != nil {
+		return nil, err
+	}
+
+	var tag Tag
+	var deletedAt sql.NullTime
+	var iconValue sql.NullString
+	var themeValue sql.NullString
+	var slug sql.NullString
+
+	if err := row.Scan(
+		&tag.ID,
+		&tag.CreatedAt,
+		&tag.UpdatedAt,
+		&deletedAt,
+		&tag.Name,
+		&slug,
+		&iconValue,
+		&themeValue,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("record not found")
+		}
+		return nil, err
+	}
+
+	if deletedAt.Valid {
+		tag.DeletedAt = &deletedAt.Time
+	}
+
+	if iconValue.Valid {
+		value := iconValue.String
+		tag.Icon = &value
+	}
+
+	if themeValue.Valid {
+		value := themeValue.String
+		tag.Theme = &value
+	}
+
+	if slug.Valid {
+		tag.Slug = slug.String
+	}
+
+	return &tag, nil
+}
+
+func (t TagModel) ensureUniqueSlug(tag *Tag) error {
+	originalSlug := tag.Slug
+	counter := 1
+
+	for {
+		var count int
+		row, err := t.Query.SetBaseTable("tags").Select("COUNT(*)").
+			WhereEqual("slug", tag.Slug).
+			WhereNotEqual("id", tag.ID).
+			WhereEqual("deletedAt", nil).
+			QueryRow()
+		if err != nil {
+			return err
+		}
+
+		if err := row.Scan(&count); err != nil {
+			return err
+		}
+
+		if count == 0 {
+			break
+		}
+
+		tag.Slug = fmt.Sprintf("%s-%d", originalSlug, counter)
+		counter++
+	}
 	return nil
 }
 
@@ -272,6 +393,7 @@ func (t TagModel) GetAll() ([]*Tag, error) {
 		var deletedAt sql.NullTime
 		var iconValue sql.NullString
 		var themeValue sql.NullString
+		var slug sql.NullString
 
 		if err := rows.Scan(
 			&tag.ID,
@@ -279,7 +401,7 @@ func (t TagModel) GetAll() ([]*Tag, error) {
 			&tag.UpdatedAt,
 			&deletedAt,
 			&tag.Name,
-			&tag.Slug,
+			&slug,
 			&iconValue,
 			&themeValue,
 		); err != nil {
@@ -298,6 +420,10 @@ func (t TagModel) GetAll() ([]*Tag, error) {
 		if themeValue.Valid {
 			value := themeValue.String
 			tag.Theme = &value
+		}
+
+		if slug.Valid {
+			tag.Slug = slug.String
 		}
 
 		tags = append(tags, tag)
