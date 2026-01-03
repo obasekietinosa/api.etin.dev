@@ -68,6 +68,15 @@ func (q *SelectQueryBuilder) WhereGreaterThan(column string, value interface{}) 
 	return q
 }
 
+func (q *SelectQueryBuilder) WhereNotEqual(column string, value interface{}) *SelectQueryBuilder {
+	if value == nil {
+		q.queryBuilder.addCondition(column, nil, "IS NOT NULL", &q.conditions)
+	} else {
+		q.queryBuilder.addCondition(column, value, "!=", &q.conditions)
+	}
+	return q
+}
+
 func (q *SelectQueryBuilder) buildPreparedStatementValues() []interface{} {
 	values := q.queryBuilder.buildCommonTableExpressionParameters()
 	values = append(values, q.queryBuilder.buildParameters(q.conditions)...)

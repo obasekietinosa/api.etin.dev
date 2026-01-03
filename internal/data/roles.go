@@ -3,9 +3,11 @@ package data
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"api.etin.dev/pkg/querybuilder"
+	"github.com/gosimple/slug"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 )
@@ -33,6 +35,14 @@ type RoleModel struct {
 }
 
 func (r RoleModel) Insert(role *Role) error {
+
+	if role.Slug == "" {
+		role.Slug = slug.Make(role.Title)
+	}
+
+	if err := r.ensureUniqueSlug(role); err != nil {
+		return err
+	}
 
 	values := querybuilder.Clauses{
 		querybuilder.Clause{ColumnName: "startDate", Value: role.StartDate},
@@ -77,6 +87,7 @@ func (r RoleModel) Get(roleId int64) (*Role, error) {
 		QueryRow()
 
 	var role Role
+	var slug sql.NullString
 
 	err = row.Scan(
 		&role.ID,
@@ -86,13 +97,17 @@ func (r RoleModel) Get(roleId int64) (*Role, error) {
 		&role.EndDate,
 		&role.Title,
 		&role.Subtitle,
-		&role.Slug,
+		&slug,
 		&role.Description,
 		pq.Array(&role.Skills),
 		&role.CompanyId,
 		&role.Company,
 		&role.CompanyIcon,
 	)
+
+	if slug.Valid {
+		role.Slug = slug.String
+	}
 
 	if err != nil {
 		switch {
@@ -107,6 +122,14 @@ func (r RoleModel) Get(roleId int64) (*Role, error) {
 }
 
 func (r RoleModel) Update(role *Role) error {
+	if role.Slug == "" {
+		role.Slug = slug.Make(role.Title)
+	}
+
+	if err := r.ensureUniqueSlug(role); err != nil {
+		return err
+	}
+
 	values := querybuilder.Clauses{
 		querybuilder.Clause{ColumnName: "startDate", Value: role.StartDate},
 		querybuilder.Clause{ColumnName: "endDate", Value: role.EndDate},
@@ -132,6 +155,82 @@ func (r RoleModel) Update(role *Role) error {
 	}
 
 	return row.Scan(&role.UpdatedAt, &role.CompanyId, &role.Company, &role.CompanyIcon)
+}
+
+func (r RoleModel) GetBySlug(slugVal string) (*Role, error) {
+	row, err := r.Query.SetBaseTable("roles").
+		Select(
+			"roles.id AS id", "roles.createdAt AS createdAt", "roles.updatedAt AS updatedAt", "roles.startDate AS startDate",
+			"roles.endDate AS endDate", "roles.title AS title", "roles.subtitle AS subtitle", "roles.slug AS slug",
+			"roles.description AS description", "roles.skills AS skills",
+			"companies.id as companyId", "companies.name as company", "companies.icon as companyIcon").
+		LeftJoin("companies", "companyId", "id").
+		WhereEqual("roles.deletedAt", nil).
+		WhereEqual("roles.slug", slugVal).
+		QueryRow()
+
+	var role Role
+	var slug sql.NullString
+
+	err = row.Scan(
+		&role.ID,
+		&role.CreatedAt,
+		&role.UpdatedAt,
+		&role.StartDate,
+		&role.EndDate,
+		&role.Title,
+		&role.Subtitle,
+		&slug,
+		&role.Description,
+		pq.Array(&role.Skills),
+		&role.CompanyId,
+		&role.Company,
+		&role.CompanyIcon,
+	)
+
+	if slug.Valid {
+		role.Slug = slug.String
+	}
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, errors.New("record not found")
+		default:
+			return nil, err
+		}
+	}
+
+	return &role, nil
+}
+
+func (r RoleModel) ensureUniqueSlug(role *Role) error {
+	originalSlug := role.Slug
+	counter := 1
+
+	for {
+		var count int
+		row, err := r.Query.SetBaseTable("roles").Select("COUNT(*)").
+			WhereEqual("slug", role.Slug).
+			WhereNotEqual("id", role.ID).
+			WhereEqual("deletedAt", nil).
+			QueryRow()
+		if err != nil {
+			return err
+		}
+
+		if err := row.Scan(&count); err != nil {
+			return err
+		}
+
+		if count == 0 {
+			break
+		}
+
+		role.Slug = fmt.Sprintf("%s-%d", originalSlug, counter)
+		counter++
+	}
+	return nil
 }
 
 func (r RoleModel) Delete(roleId int64) error {
@@ -182,6 +281,8 @@ func (r RoleModel) GetAll() ([]*Role, error) {
 
 	for rows.Next() {
 		var role Role
+		var slug sql.NullString
+
 		err := rows.Scan(
 			&role.ID,
 			&role.CreatedAt,
@@ -190,7 +291,7 @@ func (r RoleModel) GetAll() ([]*Role, error) {
 			&role.EndDate,
 			&role.Title,
 			&role.Subtitle,
-			&role.Slug,
+			&slug,
 			&role.Description,
 			pq.Array(&role.Skills),
 			&role.CompanyId,
@@ -199,6 +300,10 @@ func (r RoleModel) GetAll() ([]*Role, error) {
 		)
 		if err != nil {
 			return nil, err
+		}
+
+		if slug.Valid {
+			role.Slug = slug.String
 		}
 
 		roles = append(roles, &role)

@@ -122,7 +122,8 @@ CREATE TABLE IF NOT EXISTS projects (
   endDate timestamp(0) with time zone,
   title text NOT NULL,
   description text,
-  imageUrl text
+  imageUrl text,
+  slug varchar(255)
 );
 
 CREATE TABLE IF NOT EXISTS tags (
@@ -144,6 +145,7 @@ CREATE TABLE IF NOT EXISTS notes (
   publishedAt timestamp(0) with time zone,
   title text NOT NULL,
   subtitle text,
+  slug varchar(255),
   body text
 );
 
@@ -247,4 +249,14 @@ CREATE TABLE IF NOT EXISTS assets (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS assets_publicId_idx ON assets(publicId);
+```
+
+## Slug migration
+
+To add slugs to projects, notes and roles, run the following SQL:
+
+```sql
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS slug varchar(255);
+ALTER TABLE notes ADD COLUMN IF NOT EXISTS slug varchar(255);
+ALTER TABLE roles ADD COLUMN IF NOT EXISTS slug varchar(255);
 ```
