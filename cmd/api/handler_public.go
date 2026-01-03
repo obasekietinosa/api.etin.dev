@@ -226,6 +226,15 @@ func (app *application) getPublicAllNotesForContentHandler(w http.ResponseWriter
 
 	contentTypeStr := r.PathValue("contentType")
 	if contentTypeStr == "" {
+		// Fallback for explicit routes (projects/roles/notes) where {contentType} wildcard is missing
+		// Expected path format: /public/v1/{contentType}/notes
+		segments := strings.Split(r.URL.Path, "/")
+		if len(segments) >= 4 {
+			contentTypeStr = segments[3] // /public/v1/projects/notes -> [ "", "public", "v1", "projects", "notes" ]
+		}
+	}
+
+	if contentTypeStr == "" {
 		app.writeError(w, http.StatusBadRequest)
 		return
 	}
