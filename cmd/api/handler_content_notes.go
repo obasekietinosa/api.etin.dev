@@ -61,7 +61,7 @@ func (app *application) getCreateContentNoteHandler(w http.ResponseWriter, r *ht
 	}
 
 	// Create the note
-	if err := app.models.Notes.Insert(note); err != nil {
+	if err := app.getModels(r).Notes.Insert(note); err != nil {
 		app.logger.Printf("Could not create note: %s", err)
 		app.writeError(w, http.StatusInternalServerError)
 		return
@@ -71,14 +71,14 @@ func (app *application) getCreateContentNoteHandler(w http.ResponseWriter, r *ht
 	itemNote := &data.ItemNote{
 		NoteID:   note.ID,
 		ItemID:   itemID,
-		ItemType: itemType,
+		ItemType: string(itemType),
 	}
 
-	if err := app.models.ItemNotes.Insert(itemNote); err != nil {
+	if err := app.getModels(r).ItemNotes.Insert(itemNote); err != nil {
 		// Rollback note creation? Or just log?
 		// Since we don't have transaction helper readily available across models without passing DB,
 		// we should probably try to delete the note.
-		_ = app.models.Notes.Delete(note.ID)
+		_ = app.getModels(r).Notes.Delete(note.ID)
 
 		if errors.Is(err, data.ErrInvalidItemType) {
 			app.writeError(w, http.StatusBadRequest)
@@ -130,7 +130,7 @@ func (app *application) getContentNotesHandler(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	notes, metadata, err := app.models.ItemNotes.GetNotesForItem(itemType, itemID, filters)
+	notes, metadata, err := app.getModels(r).ItemNotes.GetNotesForItem(string(itemType), itemID, filters)
 	if err != nil {
 		if errors.Is(err, data.ErrInvalidItemType) {
 			app.writeError(w, http.StatusBadRequest)
@@ -186,7 +186,7 @@ func (app *application) getAllContentNotesHandler(w http.ResponseWriter, r *http
 		}
 	}
 
-	notes, metadata, err := app.models.ItemNotes.GetNotesForContentType(itemType, filters)
+	notes, metadata, err := app.getModels(r).ItemNotes.GetNotesForContentType(string(itemType), filters)
 	if err != nil {
 		if errors.Is(err, data.ErrInvalidItemType) {
 			app.writeError(w, http.StatusBadRequest)

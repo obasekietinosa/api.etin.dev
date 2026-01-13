@@ -9,7 +9,7 @@ import (
 )
 
 func (app *application) getNotesHandler(w http.ResponseWriter, r *http.Request) {
-	notes, err := app.models.Notes.GetAll()
+	notes, err := app.getModels(r).Notes.GetAll()
 	if err != nil {
 		app.logger.Printf("Error retrieving notes: %s", err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -57,7 +57,7 @@ func (app *application) createNoteHandler(w http.ResponseWriter, r *http.Request
 		PublishedAt: publishedAt,
 	}
 
-	err = app.models.Notes.Insert(note)
+	err = app.getModels(r).Notes.Insert(note)
 	if err != nil {
 		app.logger.Printf("Could not create note: %s", err)
 		app.writeError(w, http.StatusBadRequest)
@@ -74,7 +74,7 @@ func (app *application) getNoteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	note, err := app.models.Notes.Get(id)
+	note, err := app.getModels(r).Notes.Get(id)
 	if err != nil {
 		app.logger.Printf("Could not retrieve note %d: %s", id, err)
 		app.writeError(w, http.StatusNotFound)
@@ -96,7 +96,7 @@ func (app *application) updateNoteHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	note, err := app.models.Notes.Get(id)
+	note, err := app.getModels(r).Notes.Get(id)
 	if err != nil {
 		app.logger.Printf("Could not retrieve note %d: %s", id, err)
 		app.writeError(w, http.StatusNotFound)
@@ -134,7 +134,7 @@ func (app *application) updateNoteHandler(w http.ResponseWriter, r *http.Request
 		note.PublishedAt = &t
 	}
 
-	err = app.models.Notes.Update(note)
+	err = app.getModels(r).Notes.Update(note)
 	if err != nil {
 		app.logger.Printf("Could not update note %d: %s", id, err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -156,7 +156,7 @@ func (app *application) deleteNoteHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = app.models.Notes.Delete(id)
+	err = app.getModels(r).Notes.Delete(id)
 	if err != nil {
 		app.logger.Printf("Could not delete note %d: %s", id, err)
 		app.writeError(w, http.StatusNotFound)

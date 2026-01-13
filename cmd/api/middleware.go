@@ -1,10 +1,46 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/google/uuid"
 )
+
+type contextKey string
+
+const (
+	requestIdKey contextKey = "requestId"
+)
+
+func (app *application) requestID(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := r.Header.Get("X-Request-ID")
+		if id == "" {
+			id = uuid.New().String()
+		}
+
+		ctx := context.WithValue(r.Context(), requestIdKey, id)
+		w.Header().Set("X-Request-ID", id)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (app *application) logRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id, ok := r.Context().Value(requestIdKey).(string)
+		if !ok {
+			id = "unknown"
+		}
+
+		app.logger.Printf("[%s] %s - %s %s %s", id, r.RemoteAddr, r.Proto, r.Method, r.URL.RequestURI())
+
+		next.ServeHTTP(w, r)
+	})
+}
 
 func (app *application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

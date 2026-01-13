@@ -9,7 +9,7 @@ import (
 )
 
 func (app *application) getTagsHandler(w http.ResponseWriter, r *http.Request) {
-	tags, err := app.models.Tags.GetAll()
+	tags, err := app.getModels(r).Tags.GetAll()
 	if err != nil {
 		app.logger.Printf("Error: %s", err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -41,7 +41,7 @@ func (app *application) createTagHandler(w http.ResponseWriter, r *http.Request)
 		Icon:  input.Icon,
 		Theme: input.Theme,
 	}
-	err = app.models.Tags.Insert(tag)
+	err = app.getModels(r).Tags.Insert(tag)
 	if err != nil {
 		app.logger.Printf("Error: %s", err)
 		app.writeError(w, http.StatusBadRequest)
@@ -56,7 +56,7 @@ func (app *application) getTagHandler(w http.ResponseWriter, r *http.Request) {
 		app.writeError(w, http.StatusBadRequest)
 		return
 	}
-	tag, err := app.models.Tags.Get(id)
+	tag, err := app.getModels(r).Tags.Get(id)
 	if err != nil {
 		app.logger.Printf("A problem fetching tag id: %d Error: %s", id, err)
 		app.writeError(w, http.StatusNotFound)
@@ -75,7 +75,7 @@ func (app *application) updateTagHandler(w http.ResponseWriter, r *http.Request)
 		app.writeError(w, http.StatusBadRequest)
 		return
 	}
-	tag, err := app.models.Tags.Get(id)
+	tag, err := app.getModels(r).Tags.Get(id)
 	if err != nil {
 		app.logger.Printf("Could not retrieve model. Error: %s", err)
 		app.writeError(w, http.StatusNotFound)
@@ -105,7 +105,7 @@ func (app *application) updateTagHandler(w http.ResponseWriter, r *http.Request)
 	if input.Theme != nil {
 		tag.Theme = input.Theme
 	}
-	err = app.models.Tags.Update(tag)
+	err = app.getModels(r).Tags.Update(tag)
 	if err != nil {
 		app.logPostgresError(fmt.Sprintf("Could not update tag %d", id), err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -124,7 +124,7 @@ func (app *application) deleteTagHandler(w http.ResponseWriter, r *http.Request)
 		app.writeError(w, http.StatusBadRequest)
 		return
 	}
-	err = app.models.Tags.Delete(id)
+	err = app.getModels(r).Tags.Delete(id)
 	if err != nil {
 		app.writeError(w, http.StatusNotFound)
 		return

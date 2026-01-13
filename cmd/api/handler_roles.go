@@ -10,7 +10,7 @@ import (
 )
 
 func (app *application) getRolesHandler(w http.ResponseWriter, r *http.Request) {
-	roles, err := app.models.Roles.GetAll()
+	roles, err := app.getModels(r).Roles.GetAll()
 	if err != nil {
 		app.logger.Printf("Error: %s", err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -48,7 +48,7 @@ func (app *application) createRoleHandler(w http.ResponseWriter, r *http.Request
 		Description: input.Description,
 		Skills:      input.Skills,
 	}
-	err = app.models.Roles.Insert(role)
+	err = app.getModels(r).Roles.Insert(role)
 	if err != nil {
 		app.logger.Printf("Error: %s", err)
 		app.writeError(w, http.StatusBadRequest)
@@ -63,7 +63,7 @@ func (app *application) getRoleHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
-	role, err := app.models.Roles.Get(id)
+	role, err := app.getModels(r).Roles.Get(id)
 	if err != nil {
 		app.logger.Printf("A problem fetching roleid: %d Error: %s", id, err)
 		app.writeError(w, http.StatusNotFound)
@@ -82,7 +82,7 @@ func (app *application) updateRoleHandler(w http.ResponseWriter, r *http.Request
 		app.writeError(w, http.StatusBadRequest)
 		return
 	}
-	role, err := app.models.Roles.Get(id)
+	role, err := app.getModels(r).Roles.Get(id)
 	if err != nil {
 		app.logger.Printf("Could not retrieve model. Error: %s", err)
 		app.writeError(w, http.StatusNotFound)
@@ -124,7 +124,7 @@ func (app *application) updateRoleHandler(w http.ResponseWriter, r *http.Request
 	if len(input.Skills) > 0 {
 		role.Skills = input.Skills
 	}
-	err = app.models.Roles.Update(role)
+	err = app.getModels(r).Roles.Update(role)
 	if err != nil {
 		app.logPostgresError(fmt.Sprintf("Could not update role %d", id), err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -143,7 +143,7 @@ func (app *application) deleteRoleHandler(w http.ResponseWriter, r *http.Request
 		app.writeError(w, http.StatusBadRequest)
 		return
 	}
-	err = app.models.Roles.Delete(id)
+	err = app.getModels(r).Roles.Delete(id)
 	if err != nil {
 		app.writeError(w, http.StatusNotFound)
 		return

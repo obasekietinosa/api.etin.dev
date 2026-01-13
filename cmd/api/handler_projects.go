@@ -9,7 +9,7 @@ import (
 )
 
 func (app *application) getProjectsHandler(w http.ResponseWriter, r *http.Request) {
-	projects, err := app.models.Projects.GetAll()
+	projects, err := app.getModels(r).Projects.GetAll()
 	if err != nil {
 		app.logger.Printf("Error retrieving projects. Error: %s", err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -48,7 +48,7 @@ func (app *application) createProjectHandler(w http.ResponseWriter, r *http.Requ
 		ImageURL:    input.ImageURL,
 	}
 
-	err = app.models.Projects.Insert(project)
+	err = app.getModels(r).Projects.Insert(project)
 	if err != nil {
 		app.logger.Printf("Error creating project. Error: %s", err)
 		app.writeError(w, http.StatusBadRequest)
@@ -65,7 +65,7 @@ func (app *application) getProjectHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	project, err := app.models.Projects.Get(id)
+	project, err := app.getModels(r).Projects.Get(id)
 	if err != nil {
 		app.logger.Printf("Error retrieving project with ID %d. Error: %s", id, err)
 		app.writeError(w, http.StatusNotFound)
@@ -87,7 +87,7 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	project, err := app.models.Projects.Get(id)
+	project, err := app.getModels(r).Projects.Get(id)
 	if err != nil {
 		app.logger.Printf("Error retrieving project with ID %d for update. Error: %s", id, err)
 		app.writeError(w, http.StatusNotFound)
@@ -129,7 +129,7 @@ func (app *application) updateProjectHandler(w http.ResponseWriter, r *http.Requ
 		project.ImageURL = input.ImageURL
 	}
 
-	err = app.models.Projects.Update(project)
+	err = app.getModels(r).Projects.Update(project)
 	if err != nil {
 		app.logger.Printf("Error updating project with ID %d. Error: %s", id, err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -151,7 +151,7 @@ func (app *application) deleteProjectHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err = app.models.Projects.Delete(id)
+	err = app.getModels(r).Projects.Delete(id)
 	if err != nil {
 		app.logger.Printf("Error deleting project with ID %d. Error: %s", id, err)
 		app.writeError(w, http.StatusNotFound)

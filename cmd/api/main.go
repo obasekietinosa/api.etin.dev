@@ -107,7 +107,7 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	models := data.NewModels(db)
+	models := data.NewModels(db, logger)
 
 	app := &application{
 		config:     cfg,

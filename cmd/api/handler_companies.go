@@ -7,7 +7,7 @@ import (
 )
 
 func (app *application) getCompaniesHandler(w http.ResponseWriter, r *http.Request) {
-	companies, err := app.models.Companies.GetAll()
+	companies, err := app.getModels(r).Companies.GetAll()
 	if err != nil {
 		app.logger.Printf("Error getting all companies, error: %s", err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -39,11 +39,11 @@ func (app *application) createCompanyHandler(w http.ResponseWriter, r *http.Requ
 
 	company := &data.Company{
 		Name:        input.Name,
-		Icon:        input.Icon,
-		Description: input.Description,
+		Icon:        &input.Icon,
+		Description: &input.Description,
 	}
 
-	err = app.models.Companies.Insert(company)
+	err = app.getModels(r).Companies.Insert(company)
 	if err != nil {
 		app.logger.Print(err)
 		app.writeError(w, http.StatusBadRequest)
@@ -59,7 +59,7 @@ func (app *application) getCompanyHandler(w http.ResponseWriter, r *http.Request
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
-	company, err := app.models.Companies.Get(id)
+	company, err := app.getModels(r).Companies.Get(id)
 	if err != nil {
 		app.logger.Printf("Error getting company with ID: %d, error: %s", id, err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -81,7 +81,7 @@ func (app *application) updateCompanyHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	company, err := app.models.Companies.Get(id)
+	company, err := app.getModels(r).Companies.Get(id)
 	if err != nil {
 		app.logger.Printf("Error getting company with ID: %d, error: %s", id, err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -106,14 +106,14 @@ func (app *application) updateCompanyHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	if input.Icon != nil {
-		company.Icon = *input.Icon
+		company.Icon = input.Icon
 	}
 
 	if input.Description != nil {
-		company.Description = *input.Description
+		company.Description = input.Description
 	}
 
-	err = app.models.Companies.Update(company)
+	err = app.getModels(r).Companies.Update(company)
 	if err != nil {
 		app.logger.Printf("Could not update company with ID: %d. Error: %s", id, err)
 		app.writeError(w, http.StatusBadRequest)
@@ -134,13 +134,13 @@ func (app *application) deleteCompanyHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	company, err := app.models.Companies.Get(id)
+	company, err := app.getModels(r).Companies.Get(id)
 	if err != nil {
 		app.logger.Printf("Error getting company with ID: %d, error: %s", id, err)
 		app.writeError(w, http.StatusInternalServerError)
 		return
 	}
-	err = app.models.Companies.Delete(company)
+	err = app.getModels(r).Companies.Delete(company)
 	if err != nil {
 		app.logger.Printf("Could not delete company with ID: %d. Error: %s", id, err)
 		app.writeError(w, http.StatusBadRequest)

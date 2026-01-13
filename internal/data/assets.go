@@ -3,6 +3,7 @@ package data
 import (
 	"database/sql"
 	"errors"
+	"log"
 	"time"
 
 	"api.etin.dev/pkg/querybuilder"
@@ -18,26 +19,27 @@ type Asset struct {
 	PublicID     string     `json:"publicId"`
 	Format       string     `json:"format"`
 	ResourceType string     `json:"resourceType"`
-	Bytes        int64      `json:"bytes"`
+	Bytes        int        `json:"bytes"`
 	Width        int        `json:"width"`
 	Height       int        `json:"height"`
 }
 
 type AssetModel struct {
-	DB    *sql.DB
-	Query *querybuilder.QueryBuilder
+	DB     *sql.DB
+	Query  *querybuilder.QueryBuilder
+	Logger *log.Logger
 }
 
 func (m AssetModel) Insert(asset *Asset) error {
 	values := querybuilder.Clauses{
-		{ColumnName: "url", Value: asset.URL},
-		{ColumnName: "secureUrl", Value: asset.SecureURL},
-		{ColumnName: "publicId", Value: asset.PublicID},
-		{ColumnName: "format", Value: asset.Format},
-		{ColumnName: "resourceType", Value: asset.ResourceType},
-		{ColumnName: "bytes", Value: asset.Bytes},
-		{ColumnName: "width", Value: asset.Width},
-		{ColumnName: "height", Value: asset.Height},
+		querybuilder.Clause{ColumnName: "url", Value: asset.URL},
+		querybuilder.Clause{ColumnName: "secureUrl", Value: asset.SecureURL},
+		querybuilder.Clause{ColumnName: "publicId", Value: asset.PublicID},
+		querybuilder.Clause{ColumnName: "format", Value: asset.Format},
+		querybuilder.Clause{ColumnName: "resourceType", Value: asset.ResourceType},
+		querybuilder.Clause{ColumnName: "bytes", Value: asset.Bytes},
+		querybuilder.Clause{ColumnName: "width", Value: asset.Width},
+		querybuilder.Clause{ColumnName: "height", Value: asset.Height},
 	}
 
 	row, err := m.Query.SetBaseTable("assets").Insert(values).Returning(
@@ -45,14 +47,6 @@ func (m AssetModel) Insert(asset *Asset) error {
 		"createdAt",
 		"updatedAt",
 		"deletedAt",
-		"url",
-		"secureUrl",
-		"publicId",
-		"format",
-		"resourceType",
-		"bytes",
-		"width",
-		"height",
 	).QueryRow()
 	if err != nil {
 		return err
@@ -60,27 +54,13 @@ func (m AssetModel) Insert(asset *Asset) error {
 
 	var deletedAt sql.NullTime
 
-	if err := row.Scan(
-		&asset.ID,
-		&asset.CreatedAt,
-		&asset.UpdatedAt,
-		&deletedAt,
-		&asset.URL,
-		&asset.SecureURL,
-		&asset.PublicID,
-		&asset.Format,
-		&asset.ResourceType,
-		&asset.Bytes,
-		&asset.Width,
-		&asset.Height,
-	); err != nil {
+	err = row.Scan(&asset.ID, &asset.CreatedAt, &asset.UpdatedAt, &deletedAt)
+	if err != nil {
 		return err
 	}
 
 	if deletedAt.Valid {
 		asset.DeletedAt = &deletedAt.Time
-	} else {
-		asset.DeletedAt = nil
 	}
 
 	return nil
@@ -112,7 +92,7 @@ func (m AssetModel) Get(id int64) (*Asset, error) {
 	var asset Asset
 	var deletedAt sql.NullTime
 
-	if err := row.Scan(
+	err = row.Scan(
 		&asset.ID,
 		&asset.CreatedAt,
 		&asset.UpdatedAt,
@@ -125,60 +105,8 @@ func (m AssetModel) Get(id int64) (*Asset, error) {
 		&asset.Bytes,
 		&asset.Width,
 		&asset.Height,
-	); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("record not found")
-		}
-		return nil, err
-	}
-
-	if deletedAt.Valid {
-		asset.DeletedAt = &deletedAt.Time
-	}
-
-	return &asset, nil
-}
-
-func (m AssetModel) GetByPublicID(publicID string) (*Asset, error) {
-	if publicID == "" {
-		return nil, errors.New("record not found")
-	}
-
-	row, err := m.Query.SetBaseTable("assets").Select(
-		"id",
-		"createdAt",
-		"updatedAt",
-		"deletedAt",
-		"url",
-		"secureUrl",
-		"publicId",
-		"format",
-		"resourceType",
-		"bytes",
-		"width",
-		"height",
-	).WhereEqual("deletedAt", nil).WhereEqual("publicId", publicID).QueryRow()
+	)
 	if err != nil {
-		return nil, err
-	}
-
-	var asset Asset
-	var deletedAt sql.NullTime
-
-	if err := row.Scan(
-		&asset.ID,
-		&asset.CreatedAt,
-		&asset.UpdatedAt,
-		&deletedAt,
-		&asset.URL,
-		&asset.SecureURL,
-		&asset.PublicID,
-		&asset.Format,
-		&asset.ResourceType,
-		&asset.Bytes,
-		&asset.Width,
-		&asset.Height,
-	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("record not found")
 		}

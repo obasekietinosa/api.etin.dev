@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"api.etin.dev/pkg/querybuilder"
@@ -22,8 +23,9 @@ type Tag struct {
 }
 
 type TagModel struct {
-	DB    *sql.DB
-	Query *querybuilder.QueryBuilder
+	DB     *sql.DB
+	Query  *querybuilder.QueryBuilder
+	Logger *log.Logger
 }
 
 func (t TagModel) Insert(tag *Tag) error {

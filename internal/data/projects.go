@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"api.etin.dev/pkg/querybuilder"
@@ -24,8 +25,9 @@ type Project struct {
 }
 
 type ProjectModel struct {
-	DB    *sql.DB
-	Query *querybuilder.QueryBuilder
+	DB     *sql.DB
+	Query  *querybuilder.QueryBuilder
+	Logger *log.Logger
 }
 
 func (p ProjectModel) Insert(project *Project) error {
