@@ -3,6 +3,7 @@ package data
 import (
 	"database/sql"
 	"errors"
+	"log"
 
 	"api.etin.dev/pkg/querybuilder"
 )
@@ -25,8 +26,9 @@ type TagItem struct {
 }
 
 type TagItemModel struct {
-	DB    *sql.DB
-	Query *querybuilder.QueryBuilder
+	DB     *sql.DB
+	Query  *querybuilder.QueryBuilder
+	Logger *log.Logger
 }
 
 func (t TagItemModel) Insert(tagItem *TagItem) error {

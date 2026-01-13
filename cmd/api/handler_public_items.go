@@ -17,9 +17,9 @@ func (app *application) getPublicProjectHandler(w http.ResponseWriter, r *http.R
 
 	id, errInt := strconv.ParseInt(idOrSlug, 10, 64)
 	if errInt == nil {
-		project, err = app.models.Projects.Get(id)
+		project, err = app.getModels(r).Projects.Get(id)
 	} else {
-		project, err = app.models.Projects.GetBySlug(idOrSlug)
+		project, err = app.getModels(r).Projects.GetBySlug(idOrSlug)
 	}
 
 	if err != nil {
@@ -32,14 +32,14 @@ func (app *application) getPublicProjectHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	tags, err := app.models.TagItems.GetTagsForItem(data.ItemTypeProjects, project.ID)
+	tags, err := app.getModels(r).TagItems.GetTagsForItem(data.ItemTypeProjects, project.ID)
 	if err != nil {
 		app.logger.Printf("Error retrieving tags for project %d: %s", project.ID, err)
 		app.writeError(w, http.StatusInternalServerError)
 		return
 	}
 
-	notes, _, err := app.models.ItemNotes.GetNotesForItem(data.ItemTypeProjects, project.ID, data.CursorFilters{})
+	notes, _, err := app.getModels(r).ItemNotes.GetNotesForItem(string(data.ItemTypeProjects), project.ID, data.CursorFilters{})
 	if err != nil {
 		app.logger.Printf("Error retrieving notes for project %d: %s", project.ID, err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -48,7 +48,7 @@ func (app *application) getPublicProjectHandler(w http.ResponseWriter, r *http.R
 
 	publicNotes := make([]publicNote, 0, len(notes))
 	for _, note := range notes {
-		noteTags, err := app.models.TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
+		noteTags, err := app.getModels(r).TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
 		if err != nil {
 			app.logger.Printf("Error retrieving tags for note %d: %s", note.ID, err)
 			app.writeError(w, http.StatusInternalServerError)
@@ -68,9 +68,9 @@ func (app *application) getPublicNoteHandler(w http.ResponseWriter, r *http.Requ
 
 	id, errInt := strconv.ParseInt(idOrSlug, 10, 64)
 	if errInt == nil {
-		note, err = app.models.Notes.Get(id)
+		note, err = app.getModels(r).Notes.Get(id)
 	} else {
-		note, err = app.models.Notes.GetBySlug(idOrSlug)
+		note, err = app.getModels(r).Notes.GetBySlug(idOrSlug)
 	}
 
 	if err != nil {
@@ -83,7 +83,7 @@ func (app *application) getPublicNoteHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	tags, err := app.models.TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
+	tags, err := app.getModels(r).TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
 	if err != nil {
 		app.logger.Printf("Error retrieving tags for note %d: %s", note.ID, err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -101,9 +101,9 @@ func (app *application) getPublicRoleHandler(w http.ResponseWriter, r *http.Requ
 
 	id, errInt := strconv.ParseInt(idOrSlug, 10, 64)
 	if errInt == nil {
-		role, err = app.models.Roles.Get(id)
+		role, err = app.getModels(r).Roles.Get(id)
 	} else {
-		role, err = app.models.Roles.GetBySlug(idOrSlug)
+		role, err = app.getModels(r).Roles.GetBySlug(idOrSlug)
 	}
 
 	if err != nil {
@@ -116,7 +116,7 @@ func (app *application) getPublicRoleHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	notes, _, err := app.models.ItemNotes.GetNotesForItem(data.ItemTypeRoles, role.ID, data.CursorFilters{})
+	notes, _, err := app.getModels(r).ItemNotes.GetNotesForItem(string(data.ItemTypeRoles), role.ID, data.CursorFilters{})
 	if err != nil {
 		app.logger.Printf("Error retrieving notes for role %d: %s", role.ID, err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -125,7 +125,7 @@ func (app *application) getPublicRoleHandler(w http.ResponseWriter, r *http.Requ
 
 	publicNotes := make([]publicNote, 0, len(notes))
 	for _, note := range notes {
-		noteTags, err := app.models.TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
+		noteTags, err := app.getModels(r).TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
 		if err != nil {
 			app.logger.Printf("Error retrieving tags for note %d: %s", note.ID, err)
 			app.writeError(w, http.StatusInternalServerError)

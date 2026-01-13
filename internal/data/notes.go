@@ -3,6 +3,7 @@ package data
 import (
 	"database/sql"
 	"errors"
+	"log"
 	"time"
 
 	"fmt"
@@ -24,8 +25,9 @@ type Note struct {
 }
 
 type NoteModel struct {
-	DB    *sql.DB
-	Query *querybuilder.QueryBuilder
+	DB     *sql.DB
+	Query  *querybuilder.QueryBuilder
+	Logger *log.Logger
 }
 
 func (n NoteModel) Insert(note *Note) error {

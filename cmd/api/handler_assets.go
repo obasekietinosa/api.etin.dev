@@ -80,7 +80,7 @@ func (app *application) getCreateAssetsHandler(w http.ResponseWriter, r *http.Re
 		PublicID:     result.PublicID,
 		Format:       result.Format,
 		ResourceType: result.ResourceType,
-		Bytes:        result.Bytes,
+		Bytes:        int(result.Bytes),
 		Width:        result.Width,
 		Height:       result.Height,
 	}

@@ -10,7 +10,7 @@ import (
 )
 
 func (app *application) getTagItemsHandler(w http.ResponseWriter, r *http.Request) {
-	tagItems, err := app.models.TagItems.GetAll()
+	tagItems, err := app.getModels(r).TagItems.GetAll()
 	if err != nil {
 		app.logger.Printf("Error retrieving tag associations: %s", err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -49,7 +49,7 @@ func (app *application) createTagItemHandler(w http.ResponseWriter, r *http.Requ
 		ItemType: data.ItemType(strings.ToLower(input.ItemType)),
 	}
 
-	if err := app.models.TagItems.Insert(tagItem); err != nil {
+	if err := app.getModels(r).TagItems.Insert(tagItem); err != nil {
 		if errors.Is(err, data.ErrInvalidItemType) {
 			app.writeError(w, http.StatusBadRequest)
 			return
@@ -70,7 +70,7 @@ func (app *application) getTagItemHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	tagItem, err := app.models.TagItems.Get(id)
+	tagItem, err := app.getModels(r).TagItems.Get(id)
 	if err != nil {
 		app.logger.Printf("Could not retrieve tag association %d: %s", id, err)
 		app.writeError(w, http.StatusNotFound)
@@ -92,7 +92,7 @@ func (app *application) updateTagItemHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	tagItem, err := app.models.TagItems.Get(id)
+	tagItem, err := app.getModels(r).TagItems.Get(id)
 	if err != nil {
 		app.logger.Printf("Could not retrieve tag association %d: %s", id, err)
 		app.writeError(w, http.StatusNotFound)
@@ -123,7 +123,7 @@ func (app *application) updateTagItemHandler(w http.ResponseWriter, r *http.Requ
 		tagItem.ItemType = data.ItemType(strings.ToLower(*input.ItemType))
 	}
 
-	if err := app.models.TagItems.Update(tagItem); err != nil {
+	if err := app.getModels(r).TagItems.Update(tagItem); err != nil {
 		if errors.Is(err, data.ErrInvalidItemType) {
 			app.writeError(w, http.StatusBadRequest)
 			return
@@ -149,7 +149,7 @@ func (app *application) deleteTagItemHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err := app.models.TagItems.Delete(id); err != nil {
+	if err := app.getModels(r).TagItems.Delete(id); err != nil {
 		app.logger.Printf("Could not delete tag association %d: %s", id, err)
 		app.writeError(w, http.StatusNotFound)
 		return
@@ -178,7 +178,7 @@ func (app *application) getTagsForItemHandler(w http.ResponseWriter, r *http.Req
 
 	itemType := data.ItemType(strings.ToLower(itemTypeStr))
 
-	tags, err := app.models.TagItems.GetTagsForItem(itemType, itemID)
+	tags, err := app.getModels(r).TagItems.GetTagsForItem(itemType, itemID)
 	if err != nil {
 		if errors.Is(err, data.ErrInvalidItemType) {
 			app.writeError(w, http.StatusBadRequest)

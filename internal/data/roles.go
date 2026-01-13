@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"api.etin.dev/pkg/querybuilder"
@@ -30,8 +31,9 @@ type Role struct {
 }
 
 type RoleModel struct {
-	DB    *sql.DB
-	Query *querybuilder.QueryBuilder
+	DB     *sql.DB
+	Query  *querybuilder.QueryBuilder
+	Logger *log.Logger
 }
 
 func (r RoleModel) Insert(role *Role) error {

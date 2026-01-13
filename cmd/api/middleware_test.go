@@ -39,7 +39,8 @@ func TestLogRequest(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	handler := app.logRequest(next)
+	// Wrap with requestID first, as logRequest expects the ID in context
+	handler := app.requestID(app.logRequest(next))
 
 	req := httptest.NewRequest(http.MethodGet, "/test/url", nil)
 	req.RemoteAddr = "1.2.3.4:1234"
@@ -48,9 +49,37 @@ func TestLogRequest(t *testing.T) {
 	handler.ServeHTTP(w, req)
 
 	logOutput := buf.String()
-	expectedLogPart := "1.2.3.4:1234 - HTTP/1.1 GET /test/url"
 
+	// Check for the request ID format in the log
+	// We don't know the UUID, but we know it should start with "[" and contain "]"
+	if !strings.Contains(logOutput, "[") || !strings.Contains(logOutput, "]") {
+		t.Errorf("expected log output to contain request ID brackets, got %q", logOutput)
+	}
+
+	expectedLogPart := "1.2.3.4:1234 - HTTP/1.1 GET /test/url"
 	if !strings.Contains(logOutput, expectedLogPart) {
 		t.Errorf("expected log output to contain %q, got %q", expectedLogPart, logOutput)
+	}
+}
+
+func TestRequestID(t *testing.T) {
+	app := &application{}
+
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id, ok := r.Context().Value(requestIdKey).(string)
+		if !ok || id == "" {
+			t.Errorf("expected request ID in context")
+		}
+	})
+
+	handler := app.requestID(next)
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	w := httptest.NewRecorder()
+
+	handler.ServeHTTP(w, req)
+
+	if w.Header().Get("X-Request-ID") == "" {
+		t.Errorf("expected X-Request-ID header in response")
 	}
 }

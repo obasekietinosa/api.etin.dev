@@ -10,7 +10,7 @@ import (
 )
 
 func (app *application) getItemNotesHandler(w http.ResponseWriter, r *http.Request) {
-	itemNotes, err := app.models.ItemNotes.GetAll()
+	itemNotes, err := app.getModels(r).ItemNotes.GetAll()
 	if err != nil {
 		app.logger.Printf("Error retrieving item note associations: %s", err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -46,10 +46,10 @@ func (app *application) createItemNoteHandler(w http.ResponseWriter, r *http.Req
 	itemNote := &data.ItemNote{
 		NoteID:   input.NoteID,
 		ItemID:   input.ItemID,
-		ItemType: data.ItemType(strings.ToLower(input.ItemType)),
+		ItemType: strings.ToLower(input.ItemType),
 	}
 
-	if err := app.models.ItemNotes.Insert(itemNote); err != nil {
+	if err := app.getModels(r).ItemNotes.Insert(itemNote); err != nil {
 		if errors.Is(err, data.ErrInvalidItemType) {
 			app.writeError(w, http.StatusBadRequest)
 			return
@@ -70,7 +70,7 @@ func (app *application) getItemNoteHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	itemNote, err := app.models.ItemNotes.Get(id)
+	itemNote, err := app.getModels(r).ItemNotes.Get(id)
 	if err != nil {
 		app.logger.Printf("Could not retrieve item note association %d: %s", id, err)
 		app.writeError(w, http.StatusNotFound)
@@ -92,7 +92,7 @@ func (app *application) updateItemNoteHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	itemNote, err := app.models.ItemNotes.Get(id)
+	itemNote, err := app.getModels(r).ItemNotes.Get(id)
 	if err != nil {
 		app.logger.Printf("Could not retrieve item note association %d: %s", id, err)
 		app.writeError(w, http.StatusNotFound)
@@ -120,10 +120,10 @@ func (app *application) updateItemNoteHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	if input.ItemType != nil {
-		itemNote.ItemType = data.ItemType(strings.ToLower(*input.ItemType))
+		itemNote.ItemType = strings.ToLower(*input.ItemType)
 	}
 
-	if err := app.models.ItemNotes.Update(itemNote); err != nil {
+	if err := app.getModels(r).ItemNotes.Update(itemNote); err != nil {
 		if errors.Is(err, data.ErrInvalidItemType) {
 			app.writeError(w, http.StatusBadRequest)
 			return
@@ -149,7 +149,7 @@ func (app *application) deleteItemNoteHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := app.models.ItemNotes.Delete(id); err != nil {
+	if err := app.getModels(r).ItemNotes.Delete(id); err != nil {
 		app.logger.Printf("Could not delete item note association %d: %s", id, err)
 		app.writeError(w, http.StatusNotFound)
 		return
@@ -194,7 +194,7 @@ func (app *application) getNotesForItemHandler(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	notes, metadata, err := app.models.ItemNotes.GetNotesForItem(itemType, itemID, filters)
+	notes, metadata, err := app.getModels(r).ItemNotes.GetNotesForItem(string(itemType), itemID, filters)
 	if err != nil {
 		if errors.Is(err, data.ErrInvalidItemType) {
 			app.writeError(w, http.StatusBadRequest)
