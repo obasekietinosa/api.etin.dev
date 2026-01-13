@@ -72,5 +72,5 @@ func (app *application) routes() http.Handler {
 	mux.Handle("PUT /v1/tags/{id}", app.deployWebhook(http.HandlerFunc(app.updateTagHandler)))
 	mux.Handle("DELETE /v1/tags/{id}", app.deployWebhook(http.HandlerFunc(app.deleteTagHandler)))
 
-	return app.enableCORS(mux)
+	return app.logRequest(app.enableCORS(mux))
 }
