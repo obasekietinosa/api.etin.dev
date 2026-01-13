@@ -57,6 +57,7 @@ func (t TagModel) Insert(tag *Tag) error {
 		"createdAt",
 		"updatedAt",
 		"deletedAt",
+		"slug",
 		"icon",
 		"theme",
 	).QueryRow()
