@@ -63,6 +63,11 @@ func (q *SelectQueryBuilder) WhereLessThan(column string, value interface{}) *Se
 	return q
 }
 
+func (q *SelectQueryBuilder) WhereLessThanEqual(column string, value interface{}) *SelectQueryBuilder {
+	q.queryBuilder.addCondition(column, value, "<=", &q.conditions)
+	return q
+}
+
 func (q *SelectQueryBuilder) WhereGreaterThan(column string, value interface{}) *SelectQueryBuilder {
 	q.queryBuilder.addCondition(column, value, ">", &q.conditions)
 	return q

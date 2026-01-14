@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"time"
 
 	"api.etin.dev/pkg/querybuilder"
 )
@@ -183,6 +184,10 @@ func (i ItemNoteModel) GetNotesForItem(itemType string, itemID int64, filters Cu
 		query.WhereLessThan("notes.id", filters.Cursor)
 	}
 
+	if filters.OnlyPublished {
+		query.WhereLessThanEqual("notes.publishedAt", time.Now())
+	}
+
 	rows, err := query.Limit(filters.Limit).OrderBy("notes.id", "desc").Query()
 
 	if err != nil {
@@ -253,6 +258,10 @@ func (i ItemNoteModel) GetNotesForContentType(contentType string, filters Cursor
 
 	if filters.Cursor != "" {
 		query.WhereLessThan("notes.id", filters.Cursor)
+	}
+
+	if filters.OnlyPublished {
+		query.WhereLessThanEqual("notes.publishedAt", time.Now())
 	}
 
 	rows, err := query.Limit(filters.Limit).OrderBy("notes.id", "desc").Query()

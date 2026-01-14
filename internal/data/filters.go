@@ -3,8 +3,9 @@ package data
 import "strconv"
 
 type CursorFilters struct {
-	Limit  int
-	Cursor string
+	Limit         int
+	Cursor        string
+	OnlyPublished bool
 }
 
 type Metadata struct {
