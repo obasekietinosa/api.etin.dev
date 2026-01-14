@@ -4,19 +4,15 @@ import (
 	"database/sql"
 	"errors"
 	"log"
-	"time"
 
 	"api.etin.dev/pkg/querybuilder"
 )
 
 type ItemNote struct {
-	ID        int64      `json:"id"`
-	CreatedAt time.Time  `json:"-"`
-	UpdatedAt time.Time  `json:"-"`
-	DeletedAt *time.Time `json:"-"`
-	NoteID    int64      `json:"noteId"`
-	ItemID    int64      `json:"itemId"`
-	ItemType  string     `json:"itemType"`
+	ID       int64  `json:"id"`
+	NoteID   int64  `json:"noteId"`
+	ItemID   int64  `json:"itemId"`
+	ItemType string `json:"itemType"`
 }
 
 type ItemNoteModel struct {
@@ -32,20 +28,14 @@ func (i ItemNoteModel) Insert(itemNote *ItemNote) error {
 		querybuilder.Clause{ColumnName: "itemType", Value: itemNote.ItemType},
 	}
 
-	row, err := i.Query.SetBaseTable("item_notes").Insert(values).Returning("id", "createdAt", "updatedAt", "deletedAt").QueryRow()
+	row, err := i.Query.SetBaseTable("item_notes").Insert(values).Returning("id").QueryRow()
 	if err != nil {
 		return err
 	}
 
-	var deletedAt sql.NullTime
-
-	err = row.Scan(&itemNote.ID, &itemNote.CreatedAt, &itemNote.UpdatedAt, &deletedAt)
+	err = row.Scan(&itemNote.ID)
 	if err != nil {
 		return err
-	}
-
-	if deletedAt.Valid {
-		itemNote.DeletedAt = &deletedAt.Time
 	}
 
 	return nil
@@ -58,25 +48,18 @@ func (i ItemNoteModel) Get(id int64) (*ItemNote, error) {
 
 	row, err := i.Query.SetBaseTable("item_notes").Select(
 		"id",
-		"createdAt",
-		"updatedAt",
-		"deletedAt",
 		"noteId",
 		"itemId",
 		"itemType",
-	).WhereEqual("deletedAt", nil).WhereEqual("id", id).QueryRow()
+	).WhereEqual("id", id).QueryRow()
 	if err != nil {
 		return nil, err
 	}
 
 	var itemNote ItemNote
-	var deletedAt sql.NullTime
 
 	err = row.Scan(
 		&itemNote.ID,
-		&itemNote.CreatedAt,
-		&itemNote.UpdatedAt,
-		&deletedAt,
 		&itemNote.NoteID,
 		&itemNote.ItemID,
 		&itemNote.ItemType,
@@ -88,10 +71,6 @@ func (i ItemNoteModel) Get(id int64) (*ItemNote, error) {
 		return nil, err
 	}
 
-	if deletedAt.Valid {
-		itemNote.DeletedAt = &deletedAt.Time
-	}
-
 	return &itemNote, nil
 }
 
@@ -100,17 +79,13 @@ func (i ItemNoteModel) Update(itemNote *ItemNote) error {
 		querybuilder.Clause{ColumnName: "noteId", Value: itemNote.NoteID},
 		querybuilder.Clause{ColumnName: "itemId", Value: itemNote.ItemID},
 		querybuilder.Clause{ColumnName: "itemType", Value: itemNote.ItemType},
-		querybuilder.Clause{ColumnName: "updatedAt", Value: time.Now()},
 	}
 
 	row, err := i.Query.With(
-		i.Query.SetBaseTable("item_notes").Update(values).WhereEqual("id", itemNote.ID).WhereEqual("deletedAt", nil).Returning("id", "createdAt", "updatedAt", "deletedAt", "noteId", "itemId", "itemType"),
+		i.Query.SetBaseTable("item_notes").Update(values).WhereEqual("id", itemNote.ID).Returning("id", "noteId", "itemId", "itemType"),
 		"updated_item_note",
 	).Select(
 		"updated_item_note.id",
-		"updated_item_note.createdAt",
-		"updated_item_note.updatedAt",
-		"updated_item_note.deletedAt",
 		"updated_item_note.noteId",
 		"updated_item_note.itemId",
 		"updated_item_note.itemType",
@@ -119,25 +94,14 @@ func (i ItemNoteModel) Update(itemNote *ItemNote) error {
 		return err
 	}
 
-	var deletedAt sql.NullTime
-
 	err = row.Scan(
 		&itemNote.ID,
-		&itemNote.CreatedAt,
-		&itemNote.UpdatedAt,
-		&deletedAt,
 		&itemNote.NoteID,
 		&itemNote.ItemID,
 		&itemNote.ItemType,
 	)
 	if err != nil {
 		return err
-	}
-
-	if deletedAt.Valid {
-		itemNote.DeletedAt = &deletedAt.Time
-	} else {
-		itemNote.DeletedAt = nil
 	}
 
 	return nil
@@ -148,12 +112,7 @@ func (i ItemNoteModel) Delete(id int64) error {
 		return errors.New("record not found")
 	}
 
-	values := querybuilder.Clauses{
-		querybuilder.Clause{ColumnName: "updatedAt", Value: time.Now()},
-		querybuilder.Clause{ColumnName: "deletedAt", Value: time.Now()},
-	}
-
-	results, err := i.Query.SetBaseTable("item_notes").Update(values).WhereEqual("id", id).WhereEqual("deletedAt", nil).Exec()
+	results, err := i.Query.SetBaseTable("item_notes").Delete().WhereEqual("id", id).Exec()
 	if err != nil {
 		return err
 	}
@@ -173,13 +132,10 @@ func (i ItemNoteModel) Delete(id int64) error {
 func (i ItemNoteModel) GetAll() ([]*ItemNote, error) {
 	rows, err := i.Query.SetBaseTable("item_notes").Select(
 		"id",
-		"createdAt",
-		"updatedAt",
-		"deletedAt",
 		"noteId",
 		"itemId",
 		"itemType",
-	).WhereEqual("deletedAt", nil).OrderBy("createdAt", "desc").Query()
+	).OrderBy("id", "desc").Query()
 	if err != nil {
 		return nil, err
 	}
@@ -189,23 +145,15 @@ func (i ItemNoteModel) GetAll() ([]*ItemNote, error) {
 
 	for rows.Next() {
 		var itemNote ItemNote
-		var deletedAt sql.NullTime
 
 		err := rows.Scan(
 			&itemNote.ID,
-			&itemNote.CreatedAt,
-			&itemNote.UpdatedAt,
-			&deletedAt,
 			&itemNote.NoteID,
 			&itemNote.ItemID,
 			&itemNote.ItemType,
 		)
 		if err != nil {
 			return nil, err
-		}
-
-		if deletedAt.Valid {
-			itemNote.DeletedAt = &deletedAt.Time
 		}
 
 		itemNotes = append(itemNotes, &itemNote)
@@ -229,7 +177,7 @@ func (i ItemNoteModel) GetNotesForItem(itemType string, itemID int64, filters Cu
 		"notes.subtitle",
 		"notes.slug",
 		"notes.body",
-	).LeftJoin("notes", "noteId", "id").WhereEqual("itemType", itemType).WhereEqual("itemId", itemID).WhereEqual("deletedAt", nil)
+	).LeftJoin("notes", "noteId", "id").WhereEqual("itemType", itemType).WhereEqual("itemId", itemID).WhereEqual("notes.deletedAt", nil)
 
 	if filters.Cursor != "" {
 		query.WhereLessThan("notes.id", filters.Cursor)
@@ -301,7 +249,7 @@ func (i ItemNoteModel) GetNotesForContentType(contentType string, filters Cursor
 		"notes.subtitle",
 		"notes.slug",
 		"notes.body",
-	).LeftJoin("notes", "noteId", "id").WhereEqual("itemType", contentType).WhereEqual("deletedAt", nil)
+	).LeftJoin("notes", "noteId", "id").WhereEqual("itemType", contentType).WhereEqual("notes.deletedAt", nil)
 
 	if filters.Cursor != "" {
 		query.WhereLessThan("notes.id", filters.Cursor)
