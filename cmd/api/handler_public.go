@@ -60,7 +60,7 @@ type publicRole struct {
 var slugPattern = regexp.MustCompile(`[^a-z0-9]+`)
 
 func (app *application) getPublicNotesHandler(w http.ResponseWriter, r *http.Request) {
-	notes, err := app.getModels(r).Notes.GetAll()
+	notes, err := app.getModels(r).Notes.GetAllPublished()
 	if err != nil {
 		app.logger.Printf("Error retrieving notes: %s", err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -101,7 +101,7 @@ func (app *application) getPublicProjectsHandler(w http.ResponseWriter, r *http.
 			return
 		}
 
-		notes, _, err := app.getModels(r).ItemNotes.GetNotesForItem(string(data.ItemTypeProjects), project.ID, data.CursorFilters{})
+		notes, _, err := app.getModels(r).ItemNotes.GetNotesForItem(string(data.ItemTypeProjects), project.ID, data.CursorFilters{OnlyPublished: true})
 		if err != nil {
 			app.logger.Printf("Error retrieving notes for project %d: %s", project.ID, err)
 			app.writeError(w, http.StatusInternalServerError)
@@ -136,7 +136,7 @@ func (app *application) getPublicRolesHandler(w http.ResponseWriter, r *http.Req
 	response := make([]publicRole, 0, len(roles))
 
 	for _, role := range roles {
-		notes, _, err := app.getModels(r).ItemNotes.GetNotesForItem(string(data.ItemTypeRoles), role.ID, data.CursorFilters{})
+		notes, _, err := app.getModels(r).ItemNotes.GetNotesForItem(string(data.ItemTypeRoles), role.ID, data.CursorFilters{OnlyPublished: true})
 		if err != nil {
 			app.logger.Printf("Error retrieving notes for role %d: %s", role.ID, err)
 			app.writeError(w, http.StatusInternalServerError)
@@ -181,7 +181,8 @@ func (app *application) getPublicNotesForContentHandler(w http.ResponseWriter, r
 	itemType := data.ItemType(strings.ToLower(contentTypeStr))
 
 	filters := data.CursorFilters{
-		Limit: 20,
+		Limit:         20,
+		OnlyPublished: true,
 	}
 
 	qs := r.URL.Query()
@@ -242,7 +243,8 @@ func (app *application) getPublicAllNotesForContentHandler(w http.ResponseWriter
 	itemType := data.ItemType(strings.ToLower(contentTypeStr))
 
 	filters := data.CursorFilters{
-		Limit: 20,
+		Limit:         20,
+		OnlyPublished: true,
 	}
 
 	qs := r.URL.Query()

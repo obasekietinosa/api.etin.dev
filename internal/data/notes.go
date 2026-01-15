@@ -310,6 +310,69 @@ func (n NoteModel) GetAll() ([]*Note, error) {
 	return notes, nil
 }
 
+func (n NoteModel) GetAllPublished() ([]*Note, error) {
+	rows, err := n.Query.SetBaseTable("notes").Select(
+		"id",
+		"createdAt",
+		"updatedAt",
+		"deletedAt",
+		"publishedAt",
+		"title",
+		"subtitle",
+		"slug",
+		"body",
+	).WhereEqual("deletedAt", nil).WhereLessThanEqual("publishedAt", time.Now()).OrderBy("COALESCE(publishedAt, createdAt)", "desc").Query()
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	notes := []*Note{}
+
+	for rows.Next() {
+		var note Note
+		var deletedAt sql.NullTime
+		var publishedAt sql.NullTime
+		var slug sql.NullString
+
+		err := rows.Scan(
+			&note.ID,
+			&note.CreatedAt,
+			&note.UpdatedAt,
+			&deletedAt,
+			&publishedAt,
+			&note.Title,
+			&note.Subtitle,
+			&slug,
+			&note.Body,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if deletedAt.Valid {
+			note.DeletedAt = &deletedAt.Time
+		}
+
+		if publishedAt.Valid {
+			note.PublishedAt = &publishedAt.Time
+		}
+
+		if slug.Valid {
+			note.Slug = slug.String
+		}
+
+		notes = append(notes, &note)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return notes, nil
+}
+
 func (n NoteModel) GetBySlug(slug string) (*Note, error) {
 	row, err := n.Query.SetBaseTable("notes").Select(
 		"id",

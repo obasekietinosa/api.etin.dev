@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"api.etin.dev/internal/data"
 )
@@ -39,7 +40,7 @@ func (app *application) getPublicProjectHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	notes, _, err := app.getModels(r).ItemNotes.GetNotesForItem(string(data.ItemTypeProjects), project.ID, data.CursorFilters{})
+	notes, _, err := app.getModels(r).ItemNotes.GetNotesForItem(string(data.ItemTypeProjects), project.ID, data.CursorFilters{OnlyPublished: true})
 	if err != nil {
 		app.logger.Printf("Error retrieving notes for project %d: %s", project.ID, err)
 		app.writeError(w, http.StatusInternalServerError)
@@ -83,6 +84,11 @@ func (app *application) getPublicNoteHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	if note.PublishedAt == nil || note.PublishedAt.After(time.Now()) {
+		app.writeError(w, http.StatusNotFound)
+		return
+	}
+
 	tags, err := app.getModels(r).TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
 	if err != nil {
 		app.logger.Printf("Error retrieving tags for note %d: %s", note.ID, err)
@@ -116,7 +122,7 @@ func (app *application) getPublicRoleHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	notes, _, err := app.getModels(r).ItemNotes.GetNotesForItem(string(data.ItemTypeRoles), role.ID, data.CursorFilters{})
+	notes, _, err := app.getModels(r).ItemNotes.GetNotesForItem(string(data.ItemTypeRoles), role.ID, data.CursorFilters{OnlyPublished: true})
 	if err != nil {
 		app.logger.Printf("Error retrieving notes for role %d: %s", role.ID, err)
 		app.writeError(w, http.StatusInternalServerError)
