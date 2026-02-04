@@ -7,7 +7,7 @@ func (app *application) routes() http.Handler {
 
 	mux.HandleFunc("GET /swagger", app.swaggerHandler)
 	mux.HandleFunc("GET /public/v1/notes", app.getPublicNotesHandler)
-	mux.HandleFunc("GET /public/v1/{contentType}/{id}/notes", app.getPublicNotesForContentHandler)
+	mux.HandleFunc("GET /public/v1/{contentType}/{idOrSlug}/notes", app.getPublicNotesForContentHandler)
 	mux.HandleFunc("GET /public/v1/projects/notes", app.getPublicAllNotesForContentHandler)
 	mux.HandleFunc("GET /public/v1/roles/notes", app.getPublicAllNotesForContentHandler)
 	mux.HandleFunc("GET /public/v1/notes/notes", app.getPublicAllNotesForContentHandler)

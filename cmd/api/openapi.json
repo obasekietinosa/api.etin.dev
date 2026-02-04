@@ -1242,6 +1242,62 @@
         ]
       }
     },
+    "/public/v1/{contentType}/{idOrSlug}/notes": {
+      "get": {
+        "description": "Retrieve notes associated with a project, role, or another note, identified by ID or Slug.",
+        "operationId": "listPublicNotesForContent",
+        "parameters": [
+          {
+            "description": "Type of content to fetch notes for.",
+            "in": "path",
+            "name": "contentType",
+            "required": true,
+            "schema": {
+              "enum": [
+                "projects",
+                "roles",
+                "notes"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "Numeric ID or URL-friendly Slug of the item.",
+            "in": "path",
+            "name": "idOrSlug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicNotesResponse"
+                }
+              }
+            },
+            "description": "Public notes retrieved."
+          },
+          "400": {
+            "description": "Invalid content type or identifier."
+          },
+          "404": {
+            "description": "Item not found."
+          },
+          "500": {
+            "description": "Server error retrieving notes."
+          }
+        },
+        "summary": "List public notes for a specific item",
+        "tags": [
+          "Public Content"
+        ]
+      }
+    },
     "/swagger": {
       "get": {
         "operationId": "getSwaggerDocument",
