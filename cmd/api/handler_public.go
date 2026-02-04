@@ -162,23 +162,69 @@ func (app *application) getPublicRolesHandler(w http.ResponseWriter, r *http.Req
 
 func (app *application) getPublicNotesForContentHandler(w http.ResponseWriter, r *http.Request) {
 	// Replaced manual path parsing with r.PathValue
-	// Pattern: GET /public/v1/{contentType}/{id}/notes
+	// Pattern: GET /public/v1/{contentType}/{idOrSlug}/notes
 
 	contentTypeStr := r.PathValue("contentType")
-	itemIDStr := r.PathValue("id")
+	idOrSlug := r.PathValue("idOrSlug")
 
-	if contentTypeStr == "" || itemIDStr == "" {
-		app.writeError(w, http.StatusBadRequest)
-		return
-	}
-
-	itemID, err := strconv.ParseInt(itemIDStr, 10, 64)
-	if err != nil {
+	if contentTypeStr == "" || idOrSlug == "" {
 		app.writeError(w, http.StatusBadRequest)
 		return
 	}
 
 	itemType := data.ItemType(strings.ToLower(contentTypeStr))
+	var itemID int64
+
+	id, err := strconv.ParseInt(idOrSlug, 10, 64)
+	if err == nil {
+		itemID = id
+		// Verify existence for known types to ensure 404 consistency
+		switch itemType {
+		case data.ItemTypeProjects:
+			if _, err := app.getModels(r).Projects.Get(itemID); err != nil {
+				app.writeError(w, http.StatusNotFound)
+				return
+			}
+		case data.ItemTypeRoles:
+			if _, err := app.getModels(r).Roles.Get(itemID); err != nil {
+				app.writeError(w, http.StatusNotFound)
+				return
+			}
+		case data.ItemTypeNotes:
+			if _, err := app.getModels(r).Notes.Get(itemID); err != nil {
+				app.writeError(w, http.StatusNotFound)
+				return
+			}
+		}
+	} else {
+		// Try to resolve slug
+		switch itemType {
+		case data.ItemTypeProjects:
+			project, err := app.getModels(r).Projects.GetBySlug(idOrSlug)
+			if err != nil {
+				app.writeError(w, http.StatusNotFound)
+				return
+			}
+			itemID = project.ID
+		case data.ItemTypeRoles:
+			role, err := app.getModels(r).Roles.GetBySlug(idOrSlug)
+			if err != nil {
+				app.writeError(w, http.StatusNotFound)
+				return
+			}
+			itemID = role.ID
+		case data.ItemTypeNotes:
+			note, err := app.getModels(r).Notes.GetBySlug(idOrSlug)
+			if err != nil {
+				app.writeError(w, http.StatusNotFound)
+				return
+			}
+			itemID = note.ID
+		default:
+			app.writeError(w, http.StatusBadRequest)
+			return
+		}
+	}
 
 	filters := data.CursorFilters{
 		Limit:         20,
