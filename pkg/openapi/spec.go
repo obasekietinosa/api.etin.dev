@@ -723,6 +723,41 @@ func buildPaths() map[string]any {
 				},
 			},
 		},
+		"/public/v1/{contentType}/{idOrSlug}/notes": map[string]any{
+			"get": map[string]any{
+				"operationId": "listPublicNotesForContent",
+				"summary":     "List public notes for a specific item",
+				"description": "Retrieve notes associated with a project, role, or another note, identified by ID or Slug.",
+				"tags":        []string{"Public Content"},
+				"parameters": []map[string]any{
+					{
+						"name":        "contentType",
+						"in":          "path",
+						"required":    true,
+						"description": "Type of content to fetch notes for.",
+						"schema": map[string]any{
+							"type": "string",
+							"enum": []string{"projects", "roles", "notes"},
+						},
+					},
+					{
+						"name":        "idOrSlug",
+						"in":          "path",
+						"required":    true,
+						"description": "Numeric ID or URL-friendly Slug of the item.",
+						"schema": map[string]any{
+							"type": "string",
+						},
+					},
+				},
+				"responses": map[string]any{
+					"200": jsonResponse("Public notes retrieved.", "PublicNotesResponse"),
+					"400": noContent("Invalid content type or identifier."),
+					"404": noContent("Item not found."),
+					"500": noContent("Server error retrieving notes."),
+				},
+			},
+		},
 		"/v1/admin/login": map[string]any{
 			"post": map[string]any{
 				"operationId": "adminLogin",
