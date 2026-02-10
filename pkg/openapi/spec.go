@@ -332,6 +332,10 @@ func buildSchemas() map[string]any {
 					"type":  "array",
 					"items": ref("PublicRelatedItem"),
 				},
+				"relatedNotes": map[string]any{
+					"type":  "array",
+					"items": ref("PublicNote"),
+				},
 			},
 		},
 		"PublicProject": map[string]any{
