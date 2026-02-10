@@ -304,6 +304,16 @@ func buildSchemas() map[string]any {
 				"theme": stringSchema("Optional theme associated with the tag."),
 			},
 		},
+		"PublicRelatedItem": map[string]any{
+			"type":     "object",
+			"required": []string{"id", "title", "type", "slug"},
+			"properties": map[string]any{
+				"id":    int64Schema("Item identifier."),
+				"title": stringSchema("Item title."),
+				"type":  stringSchema("Item type (e.g., project, role)."),
+				"slug":  stringSchema("Item slug."),
+			},
+		},
 		"PublicNote": map[string]any{
 			"type":     "object",
 			"required": []string{"id", "publishedAt", "title", "preview", "body", "isFeatured", "tags"},
@@ -317,6 +327,10 @@ func buildSchemas() map[string]any {
 				"tags": map[string]any{
 					"type":  "array",
 					"items": ref("PublicTag"),
+				},
+				"relatedItems": map[string]any{
+					"type":  "array",
+					"items": ref("PublicRelatedItem"),
 				},
 			},
 		},

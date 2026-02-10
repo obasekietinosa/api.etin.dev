@@ -580,6 +580,12 @@
             "description": "ISO 8601 timestamp when the note was published. Empty when unpublished.",
             "type": "string"
           },
+          "relatedItems": {
+            "items": {
+              "$ref": "#/components/schemas/PublicRelatedItem"
+            },
+            "type": "array"
+          },
           "tags": {
             "items": {
               "$ref": "#/components/schemas/PublicTag"
@@ -680,6 +686,34 @@
             "type": "array"
           }
         },
+        "type": "object"
+      },
+      "PublicRelatedItem": {
+        "properties": {
+          "id": {
+            "description": "Item identifier.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "slug": {
+            "description": "Item slug.",
+            "type": "string"
+          },
+          "title": {
+            "description": "Item title.",
+            "type": "string"
+          },
+          "type": {
+            "description": "Item type (e.g., project, role).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "type",
+          "slug"
+        ],
         "type": "object"
       },
       "PublicRole": {

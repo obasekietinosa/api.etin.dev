@@ -47,6 +47,13 @@ func (app *application) getPublicProjectHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	relatedItemsMap, err := app.fetchRelatedItems(r, notes)
+	if err != nil {
+		app.logger.Printf("Error fetching related items: %s", err)
+		app.writeError(w, http.StatusInternalServerError)
+		return
+	}
+
 	publicNotes := make([]publicNote, 0, len(notes))
 	for _, note := range notes {
 		noteTags, err := app.getModels(r).TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
@@ -55,7 +62,8 @@ func (app *application) getPublicProjectHandler(w http.ResponseWriter, r *http.R
 			app.writeError(w, http.StatusInternalServerError)
 			return
 		}
-		publicNotes = append(publicNotes, buildPublicNote(note, noteTags))
+		relatedItems := relatedItemsMap[note.ID]
+		publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItems))
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"project": buildPublicProject(project, tags, publicNotes)})
@@ -96,7 +104,15 @@ func (app *application) getPublicNoteHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, envelope{"note": buildPublicNote(note, tags)})
+	relatedItemsMap, err := app.fetchRelatedItems(r, []*data.Note{note})
+	if err != nil {
+		app.logger.Printf("Error retrieving related items: %s", err)
+		app.writeError(w, http.StatusInternalServerError)
+		return
+	}
+	relatedItems := relatedItemsMap[note.ID]
+
+	app.writeJSON(w, http.StatusOK, envelope{"note": buildPublicNote(note, tags, relatedItems)})
 }
 
 func (app *application) getPublicRoleHandler(w http.ResponseWriter, r *http.Request) {
@@ -129,6 +145,13 @@ func (app *application) getPublicRoleHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	relatedItemsMap, err := app.fetchRelatedItems(r, notes)
+	if err != nil {
+		app.logger.Printf("Error fetching related items: %s", err)
+		app.writeError(w, http.StatusInternalServerError)
+		return
+	}
+
 	publicNotes := make([]publicNote, 0, len(notes))
 	for _, note := range notes {
 		noteTags, err := app.getModels(r).TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
@@ -137,7 +160,8 @@ func (app *application) getPublicRoleHandler(w http.ResponseWriter, r *http.Requ
 			app.writeError(w, http.StatusInternalServerError)
 			return
 		}
-		publicNotes = append(publicNotes, buildPublicNote(note, noteTags))
+		relatedItems := relatedItemsMap[note.ID]
+		publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItems))
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"role": buildPublicRole(role, publicNotes)})

@@ -317,3 +317,64 @@ func (r RoleModel) GetAll() ([]*Role, error) {
 
 	return roles, nil
 }
+
+func (r RoleModel) GetByIDs(ids []int64) ([]*Role, error) {
+	if len(ids) == 0 {
+		return []*Role{}, nil
+	}
+
+	query := `
+        SELECT
+            roles.id AS id, roles.createdAt AS createdAt, roles.updatedAt AS updatedAt, roles.startDate AS startDate,
+			roles.endDate AS endDate, roles.title AS title, roles.subtitle AS subtitle, roles.slug AS slug,
+			roles.description AS description, roles.skills AS skills, roles.companyId AS companyId,
+			companies.name AS company, companies.icon AS companyIcon
+        FROM roles
+        LEFT JOIN companies ON roles.companyId = companies.id
+        WHERE roles.deletedAt IS NULL AND roles.id = ANY($1)
+    `
+
+	rows, err := r.DB.Query(query, pq.Array(ids))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	roles := []*Role{}
+
+	for rows.Next() {
+		var role Role
+		var slug sql.NullString
+
+		err := rows.Scan(
+			&role.ID,
+			&role.CreatedAt,
+			&role.UpdatedAt,
+			&role.StartDate,
+			&role.EndDate,
+			&role.Title,
+			&role.Subtitle,
+			&slug,
+			&role.Description,
+			pq.Array(&role.Skills),
+			&role.CompanyId,
+			&role.Company,
+			&role.CompanyIcon,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if slug.Valid {
+			role.Slug = slug.String
+		}
+
+		roles = append(roles, &role)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return roles, nil
+}

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"api.etin.dev/pkg/querybuilder"
+	"github.com/lib/pq"
 )
 
 type ItemNote struct {
@@ -157,6 +158,46 @@ func (i ItemNoteModel) GetAll() ([]*ItemNote, error) {
 			return nil, err
 		}
 
+		itemNotes = append(itemNotes, &itemNote)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return itemNotes, nil
+}
+
+func (i ItemNoteModel) GetByNoteIDs(noteIDs []int64) ([]*ItemNote, error) {
+	if len(noteIDs) == 0 {
+		return []*ItemNote{}, nil
+	}
+
+	query := `
+        SELECT id, noteId, itemId, itemType
+        FROM item_notes
+        WHERE noteId = ANY($1)
+    `
+
+	rows, err := i.DB.Query(query, pq.Array(noteIDs))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	itemNotes := []*ItemNote{}
+
+	for rows.Next() {
+		var itemNote ItemNote
+		err := rows.Scan(
+			&itemNote.ID,
+			&itemNote.NoteID,
+			&itemNote.ItemID,
+			&itemNote.ItemType,
+		)
+		if err != nil {
+			return nil, err
+		}
 		itemNotes = append(itemNotes, &itemNote)
 	}
 
