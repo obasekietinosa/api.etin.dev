@@ -47,6 +47,13 @@ func (app *application) getPublicProjectHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	relatedItem := &publicRelatedItem{
+		ID:    project.ID,
+		Title: project.Title,
+		Type:  "project",
+		Slug:  project.Slug,
+	}
+
 	publicNotes := make([]publicNote, 0, len(notes))
 	for _, note := range notes {
 		noteTags, err := app.getModels(r).TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
@@ -55,7 +62,7 @@ func (app *application) getPublicProjectHandler(w http.ResponseWriter, r *http.R
 			app.writeError(w, http.StatusInternalServerError)
 			return
 		}
-		publicNotes = append(publicNotes, buildPublicNote(note, noteTags))
+		publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItem))
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"project": buildPublicProject(project, tags, publicNotes)})
@@ -96,7 +103,40 @@ func (app *application) getPublicNoteHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	app.writeJSON(w, http.StatusOK, envelope{"note": buildPublicNote(note, tags)})
+	var relatedItem *publicRelatedItem
+	itemNotes, err := app.getModels(r).ItemNotes.GetByNoteIDs([]int64{note.ID})
+	if err != nil {
+		app.logger.Printf("Error retrieving item notes: %s", err)
+		app.writeError(w, http.StatusInternalServerError)
+		return
+	}
+
+	if len(itemNotes) > 0 {
+		in := itemNotes[0]
+		if in.ItemType == string(data.ItemTypeProjects) {
+			project, err := app.getModels(r).Projects.Get(in.ItemID)
+			if err == nil {
+				relatedItem = &publicRelatedItem{
+					ID:    project.ID,
+					Title: project.Title,
+					Type:  "project",
+					Slug:  project.Slug,
+				}
+			}
+		} else if in.ItemType == string(data.ItemTypeRoles) {
+			role, err := app.getModels(r).Roles.Get(in.ItemID)
+			if err == nil {
+				relatedItem = &publicRelatedItem{
+					ID:    role.ID,
+					Title: role.Title,
+					Type:  "role",
+					Slug:  role.Slug,
+				}
+			}
+		}
+	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"note": buildPublicNote(note, tags, relatedItem)})
 }
 
 func (app *application) getPublicRoleHandler(w http.ResponseWriter, r *http.Request) {
@@ -129,6 +169,13 @@ func (app *application) getPublicRoleHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	relatedItem := &publicRelatedItem{
+		ID:    role.ID,
+		Title: role.Title,
+		Type:  "role",
+		Slug:  role.Slug,
+	}
+
 	publicNotes := make([]publicNote, 0, len(notes))
 	for _, note := range notes {
 		noteTags, err := app.getModels(r).TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
@@ -137,7 +184,7 @@ func (app *application) getPublicRoleHandler(w http.ResponseWriter, r *http.Requ
 			app.writeError(w, http.StatusInternalServerError)
 			return
 		}
-		publicNotes = append(publicNotes, buildPublicNote(note, noteTags))
+		publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItem))
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"role": buildPublicRole(role, publicNotes)})

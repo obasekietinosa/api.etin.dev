@@ -19,15 +19,23 @@ type publicTag struct {
 	Theme *string `json:"theme"`
 }
 
+type publicRelatedItem struct {
+	ID    int64  `json:"id"`
+	Title string `json:"title"`
+	Type  string `json:"type"`
+	Slug  string `json:"slug"`
+}
+
 type publicNote struct {
-	ID          int64       `json:"id"`
-	PublishedAt string      `json:"publishedAt"`
-	Title       string      `json:"title"`
-	Slug        string      `json:"slug"`
-	Preview     string      `json:"preview"`
-	Body        string      `json:"body"`
-	IsFeatured  bool        `json:"isFeatured"`
-	Tags        []publicTag `json:"tags"`
+	ID          int64              `json:"id"`
+	PublishedAt string             `json:"publishedAt"`
+	Title       string             `json:"title"`
+	Slug        string             `json:"slug"`
+	Preview     string             `json:"preview"`
+	Body        string             `json:"body"`
+	IsFeatured  bool               `json:"isFeatured"`
+	Tags        []publicTag        `json:"tags"`
+	RelatedItem *publicRelatedItem `json:"relatedItem,omitempty"`
 }
 
 type publicProject struct {
@@ -67,6 +75,57 @@ func (app *application) getPublicNotesHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	noteIDs := make([]int64, len(notes))
+	for i, n := range notes {
+		noteIDs[i] = n.ID
+	}
+
+	itemNotes, err := app.getModels(r).ItemNotes.GetByNoteIDs(noteIDs)
+	if err != nil {
+		app.logger.Printf("Error retrieving item notes: %s", err)
+		app.writeError(w, http.StatusInternalServerError)
+		return
+	}
+
+	noteItems := make(map[int64]*data.ItemNote)
+	projectIDs := []int64{}
+	roleIDs := []int64{}
+
+	for _, in := range itemNotes {
+		noteItems[in.NoteID] = in
+		if in.ItemType == string(data.ItemTypeProjects) {
+			projectIDs = append(projectIDs, in.ItemID)
+		} else if in.ItemType == string(data.ItemTypeRoles) {
+			roleIDs = append(roleIDs, in.ItemID)
+		}
+	}
+
+	projectsMap := make(map[int64]*data.Project)
+	if len(projectIDs) > 0 {
+		projects, err := app.getModels(r).Projects.GetByIDs(projectIDs)
+		if err != nil {
+			app.logger.Printf("Error retrieving projects: %s", err)
+			app.writeError(w, http.StatusInternalServerError)
+			return
+		}
+		for _, p := range projects {
+			projectsMap[p.ID] = p
+		}
+	}
+
+	rolesMap := make(map[int64]*data.Role)
+	if len(roleIDs) > 0 {
+		roles, err := app.getModels(r).Roles.GetByIDs(roleIDs)
+		if err != nil {
+			app.logger.Printf("Error retrieving roles: %s", err)
+			app.writeError(w, http.StatusInternalServerError)
+			return
+		}
+		for _, role := range roles {
+			rolesMap[role.ID] = role
+		}
+	}
+
 	response := make([]publicNote, 0, len(notes))
 
 	for _, note := range notes {
@@ -77,7 +136,30 @@ func (app *application) getPublicNotesHandler(w http.ResponseWriter, r *http.Req
 			return
 		}
 
-		response = append(response, buildPublicNote(note, tags))
+		var relatedItem *publicRelatedItem
+		if in, ok := noteItems[note.ID]; ok {
+			if in.ItemType == string(data.ItemTypeProjects) {
+				if p, ok := projectsMap[in.ItemID]; ok {
+					relatedItem = &publicRelatedItem{
+						ID:    p.ID,
+						Title: p.Title,
+						Type:  "project",
+						Slug:  p.Slug,
+					}
+				}
+			} else if in.ItemType == string(data.ItemTypeRoles) {
+				if r, ok := rolesMap[in.ItemID]; ok {
+					relatedItem = &publicRelatedItem{
+						ID:    r.ID,
+						Title: r.Title,
+						Type:  "role",
+						Slug:  r.Slug,
+					}
+				}
+			}
+		}
+
+		response = append(response, buildPublicNote(note, tags, relatedItem))
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"notes": response})
@@ -108,6 +190,13 @@ func (app *application) getPublicProjectsHandler(w http.ResponseWriter, r *http.
 			return
 		}
 
+		relatedItem := &publicRelatedItem{
+			ID:    project.ID,
+			Title: project.Title,
+			Type:  "project",
+			Slug:  project.Slug,
+		}
+
 		publicNotes := make([]publicNote, 0, len(notes))
 		for _, note := range notes {
 			noteTags, err := app.getModels(r).TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
@@ -116,7 +205,7 @@ func (app *application) getPublicProjectsHandler(w http.ResponseWriter, r *http.
 				app.writeError(w, http.StatusInternalServerError)
 				return
 			}
-			publicNotes = append(publicNotes, buildPublicNote(note, noteTags))
+			publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItem))
 		}
 
 		response = append(response, buildPublicProject(project, tags, publicNotes))
@@ -143,6 +232,13 @@ func (app *application) getPublicRolesHandler(w http.ResponseWriter, r *http.Req
 			return
 		}
 
+		relatedItem := &publicRelatedItem{
+			ID:    role.ID,
+			Title: role.Title,
+			Type:  "role",
+			Slug:  role.Slug,
+		}
+
 		publicNotes := make([]publicNote, 0, len(notes))
 		for _, note := range notes {
 			noteTags, err := app.getModels(r).TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
@@ -151,7 +247,7 @@ func (app *application) getPublicRolesHandler(w http.ResponseWriter, r *http.Req
 				app.writeError(w, http.StatusInternalServerError)
 				return
 			}
-			publicNotes = append(publicNotes, buildPublicNote(note, noteTags))
+			publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItem))
 		}
 
 		response = append(response, buildPublicRole(role, publicNotes))
@@ -176,24 +272,48 @@ func (app *application) getPublicNotesForContentHandler(w http.ResponseWriter, r
 	var itemID int64
 
 	id, err := strconv.ParseInt(idOrSlug, 10, 64)
+
+	var relatedItem *publicRelatedItem
+
 	if err == nil {
 		itemID = id
 		// Verify existence for known types to ensure 404 consistency
 		switch itemType {
 		case data.ItemTypeProjects:
-			if _, err := app.getModels(r).Projects.Get(itemID); err != nil {
+			project, err := app.getModels(r).Projects.Get(itemID)
+			if err != nil {
 				app.writeError(w, http.StatusNotFound)
 				return
+			}
+			relatedItem = &publicRelatedItem{
+				ID:    project.ID,
+				Title: project.Title,
+				Type:  "project",
+				Slug:  project.Slug,
 			}
 		case data.ItemTypeRoles:
-			if _, err := app.getModels(r).Roles.Get(itemID); err != nil {
+			role, err := app.getModels(r).Roles.Get(itemID)
+			if err != nil {
 				app.writeError(w, http.StatusNotFound)
 				return
 			}
+			relatedItem = &publicRelatedItem{
+				ID:    role.ID,
+				Title: role.Title,
+				Type:  "role",
+				Slug:  role.Slug,
+			}
 		case data.ItemTypeNotes:
-			if _, err := app.getModels(r).Notes.Get(itemID); err != nil {
+			note, err := app.getModels(r).Notes.Get(itemID)
+			if err != nil {
 				app.writeError(w, http.StatusNotFound)
 				return
+			}
+			relatedItem = &publicRelatedItem{
+				ID:    note.ID,
+				Title: note.Title,
+				Type:  "note",
+				Slug:  note.Slug,
 			}
 		}
 	} else {
@@ -206,6 +326,12 @@ func (app *application) getPublicNotesForContentHandler(w http.ResponseWriter, r
 				return
 			}
 			itemID = project.ID
+			relatedItem = &publicRelatedItem{
+				ID:    project.ID,
+				Title: project.Title,
+				Type:  "project",
+				Slug:  project.Slug,
+			}
 		case data.ItemTypeRoles:
 			role, err := app.getModels(r).Roles.GetBySlug(idOrSlug)
 			if err != nil {
@@ -213,6 +339,12 @@ func (app *application) getPublicNotesForContentHandler(w http.ResponseWriter, r
 				return
 			}
 			itemID = role.ID
+			relatedItem = &publicRelatedItem{
+				ID:    role.ID,
+				Title: role.Title,
+				Type:  "role",
+				Slug:  role.Slug,
+			}
 		case data.ItemTypeNotes:
 			note, err := app.getModels(r).Notes.GetBySlug(idOrSlug)
 			if err != nil {
@@ -220,6 +352,12 @@ func (app *application) getPublicNotesForContentHandler(w http.ResponseWriter, r
 				return
 			}
 			itemID = note.ID
+			relatedItem = &publicRelatedItem{
+				ID:    note.ID,
+				Title: note.Title,
+				Type:  "note",
+				Slug:  note.Slug,
+			}
 		default:
 			app.writeError(w, http.StatusBadRequest)
 			return
@@ -261,7 +399,7 @@ func (app *application) getPublicNotesForContentHandler(w http.ResponseWriter, r
 			app.writeError(w, http.StatusInternalServerError)
 			return
 		}
-		publicNotes = append(publicNotes, buildPublicNote(note, noteTags))
+		publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItem))
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"notes": publicNotes, "metadata": metadata})
@@ -315,6 +453,55 @@ func (app *application) getPublicAllNotesForContentHandler(w http.ResponseWriter
 		return
 	}
 
+	noteIDs := make([]int64, len(notes))
+	for i, n := range notes {
+		noteIDs[i] = n.ID
+	}
+
+	itemNotes, err := app.getModels(r).ItemNotes.GetByNoteIDs(noteIDs)
+	if err != nil {
+		app.logger.Printf("Error retrieving item notes: %s", err)
+		app.writeError(w, http.StatusInternalServerError)
+		return
+	}
+
+	noteItems := make(map[int64]*data.ItemNote)
+	itemIDs := []int64{}
+	for _, in := range itemNotes {
+		if in.ItemType == string(itemType) {
+			noteItems[in.NoteID] = in
+			itemIDs = append(itemIDs, in.ItemID)
+		}
+	}
+
+	projectsMap := make(map[int64]*data.Project)
+	rolesMap := make(map[int64]*data.Role)
+
+	if len(itemIDs) > 0 {
+		switch itemType {
+		case data.ItemTypeProjects:
+			projects, err := app.getModels(r).Projects.GetByIDs(itemIDs)
+			if err != nil {
+				app.logger.Printf("Error retrieving projects: %s", err)
+				app.writeError(w, http.StatusInternalServerError)
+				return
+			}
+			for _, p := range projects {
+				projectsMap[p.ID] = p
+			}
+		case data.ItemTypeRoles:
+			roles, err := app.getModels(r).Roles.GetByIDs(itemIDs)
+			if err != nil {
+				app.logger.Printf("Error retrieving roles: %s", err)
+				app.writeError(w, http.StatusInternalServerError)
+				return
+			}
+			for _, r := range roles {
+				rolesMap[r.ID] = r
+			}
+		}
+	}
+
 	publicNotes := make([]publicNote, 0, len(notes))
 	for _, note := range notes {
 		noteTags, err := app.getModels(r).TagItems.GetTagsForItem(data.ItemTypeNotes, note.ID)
@@ -323,13 +510,38 @@ func (app *application) getPublicAllNotesForContentHandler(w http.ResponseWriter
 			app.writeError(w, http.StatusInternalServerError)
 			return
 		}
-		publicNotes = append(publicNotes, buildPublicNote(note, noteTags))
+
+		var relatedItem *publicRelatedItem
+		if in, ok := noteItems[note.ID]; ok {
+			switch itemType {
+			case data.ItemTypeProjects:
+				if p, ok := projectsMap[in.ItemID]; ok {
+					relatedItem = &publicRelatedItem{
+						ID:    p.ID,
+						Title: p.Title,
+						Type:  "project",
+						Slug:  p.Slug,
+					}
+				}
+			case data.ItemTypeRoles:
+				if r, ok := rolesMap[in.ItemID]; ok {
+					relatedItem = &publicRelatedItem{
+						ID:    r.ID,
+						Title: r.Title,
+						Type:  "role",
+						Slug:  r.Slug,
+					}
+				}
+			}
+		}
+
+		publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItem))
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"notes": publicNotes, "metadata": metadata})
 }
 
-func buildPublicNote(note *data.Note, tags []*data.Tag) publicNote {
+func buildPublicNote(note *data.Note, tags []*data.Tag, relatedItem *publicRelatedItem) publicNote {
 	publishedAt := ""
 	if note.PublishedAt != nil {
 		publishedAt = formatTime(*note.PublishedAt)
@@ -346,6 +558,7 @@ func buildPublicNote(note *data.Note, tags []*data.Tag) publicNote {
 		Body:        note.Body,
 		IsFeatured:  hasFeaturedTag(publicTags),
 		Tags:        publicTags,
+		RelatedItem: relatedItem,
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 
 	"api.etin.dev/pkg/querybuilder"
 	"github.com/gosimple/slug"
+	"github.com/lib/pq"
 )
 
 type Project struct {
@@ -320,6 +321,74 @@ func (p ProjectModel) GetAll() ([]*Project, error) {
 		return nil, err
 	}
 
+	defer rows.Close()
+
+	projects := []*Project{}
+
+	for rows.Next() {
+		var project Project
+		var deletedAt sql.NullTime
+		var endDate sql.NullTime
+		var imageURL sql.NullString
+		var slug sql.NullString
+
+		err := rows.Scan(
+			&project.ID,
+			&project.CreatedAt,
+			&project.UpdatedAt,
+			&deletedAt,
+			&project.StartDate,
+			&endDate,
+			&project.Title,
+			&slug,
+			&project.Description,
+			&imageURL,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if deletedAt.Valid {
+			project.DeletedAt = &deletedAt.Time
+		}
+
+		if endDate.Valid {
+			project.EndDate = &endDate.Time
+		}
+
+		if imageURL.Valid {
+			project.ImageURL = &imageURL.String
+		}
+
+		if slug.Valid {
+			project.Slug = slug.String
+		}
+
+		projects = append(projects, &project)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
+}
+
+func (p ProjectModel) GetByIDs(ids []int64) ([]*Project, error) {
+	if len(ids) == 0 {
+		return []*Project{}, nil
+	}
+
+	query := `
+        SELECT id, createdAt, updatedAt, deletedAt, startDate, endDate, title, slug, description, imageUrl
+        FROM projects
+        WHERE deletedAt IS NULL AND id = ANY($1)
+    `
+
+	rows, err := p.DB.Query(query, pq.Array(ids))
+	if err != nil {
+		return nil, err
+	}
 	defer rows.Close()
 
 	projects := []*Project{}
