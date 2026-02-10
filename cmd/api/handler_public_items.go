@@ -63,7 +63,7 @@ func (app *application) getPublicProjectHandler(w http.ResponseWriter, r *http.R
 			return
 		}
 		relatedItems := relatedItemsMap[note.ID]
-		publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItems))
+		publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItems, nil))
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"project": buildPublicProject(project, tags, publicNotes)})
@@ -112,7 +112,14 @@ func (app *application) getPublicNoteHandler(w http.ResponseWriter, r *http.Requ
 	}
 	relatedItems := relatedItemsMap[note.ID]
 
-	app.writeJSON(w, http.StatusOK, envelope{"note": buildPublicNote(note, tags, relatedItems)})
+	relatedNotes, err := app.getRelatedNotes(r, note, tags)
+	if err != nil {
+		app.logger.Printf("Error retrieving related notes: %s", err)
+		// We can still proceed without related notes
+		relatedNotes = []publicNote{}
+	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"note": buildPublicNote(note, tags, relatedItems, relatedNotes)})
 }
 
 func (app *application) getPublicRoleHandler(w http.ResponseWriter, r *http.Request) {
@@ -161,7 +168,7 @@ func (app *application) getPublicRoleHandler(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		relatedItems := relatedItemsMap[note.ID]
-		publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItems))
+		publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItems, nil))
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"role": buildPublicRole(role, publicNotes)})
