@@ -586,6 +586,12 @@
             },
             "type": "array"
           },
+          "relatedNotes": {
+            "items": {
+              "$ref": "#/components/schemas/PublicNote"
+            },
+            "type": "array"
+          },
           "tags": {
             "items": {
               "$ref": "#/components/schemas/PublicTag"

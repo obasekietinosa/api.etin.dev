@@ -36,6 +36,7 @@ type publicNote struct {
 	IsFeatured   bool                `json:"isFeatured"`
 	Tags         []publicTag         `json:"tags"`
 	RelatedItems []publicRelatedItem `json:"relatedItems,omitempty"`
+	RelatedNotes []publicNote        `json:"relatedNotes,omitempty"`
 }
 
 type publicProject struct {
@@ -175,7 +176,7 @@ func (app *application) getPublicNotesHandler(w http.ResponseWriter, r *http.Req
 		}
 
 		relatedItems := relatedItemsMap[note.ID]
-		response = append(response, buildPublicNote(note, tags, relatedItems))
+		response = append(response, buildPublicNote(note, tags, relatedItems, nil))
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"notes": response})
@@ -222,7 +223,7 @@ func (app *application) getPublicProjectsHandler(w http.ResponseWriter, r *http.
 				return
 			}
 			relatedItems := relatedItemsMap[note.ID]
-			publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItems))
+			publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItems, nil))
 		}
 
 		response = append(response, buildPublicProject(project, tags, publicNotes))
@@ -265,7 +266,7 @@ func (app *application) getPublicRolesHandler(w http.ResponseWriter, r *http.Req
 				return
 			}
 			relatedItems := relatedItemsMap[note.ID]
-			publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItems))
+			publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItems, nil))
 		}
 
 		response = append(response, buildPublicRole(role, publicNotes))
@@ -384,7 +385,7 @@ func (app *application) getPublicNotesForContentHandler(w http.ResponseWriter, r
 			return
 		}
 		relatedItems := relatedItemsMap[note.ID]
-		publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItems))
+		publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItems, nil))
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"notes": publicNotes, "metadata": metadata})
@@ -455,13 +456,91 @@ func (app *application) getPublicAllNotesForContentHandler(w http.ResponseWriter
 		}
 
 		relatedItems := relatedItemsMap[note.ID]
-		publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItems))
+		publicNotes = append(publicNotes, buildPublicNote(note, noteTags, relatedItems, nil))
 	}
 
 	app.writeJSON(w, http.StatusOK, envelope{"notes": publicNotes, "metadata": metadata})
 }
 
-func buildPublicNote(note *data.Note, tags []*data.Tag, relatedItems []publicRelatedItem) publicNote {
+func (app *application) getRelatedNotes(r *http.Request, note *data.Note, tags []*data.Tag) ([]publicNote, error) {
+	if note.PublishedAt == nil {
+		return nil, nil
+	}
+
+	seenIDs := make(map[int64]bool)
+	seenIDs[note.ID] = true
+
+	var candidates []*data.Note
+	maxNotes := 5
+
+	// 1. Related by Item
+	itemNotes, err := app.getModels(r).ItemNotes.GetByNoteIDs([]int64{note.ID})
+	if err == nil {
+		for _, in := range itemNotes {
+			notes, _, err := app.getModels(r).ItemNotes.GetNotesForItem(in.ItemType, in.ItemID, data.CursorFilters{
+				Limit:         maxNotes,
+				OnlyPublished: true,
+			})
+			if err == nil {
+				for _, n := range notes {
+					if !seenIDs[n.ID] {
+						candidates = append(candidates, n)
+						seenIDs[n.ID] = true
+					}
+				}
+			}
+		}
+	}
+
+	// 2. Related by Tag
+	if len(candidates) < maxNotes {
+		for _, tag := range tags {
+			notes, err := app.getModels(r).TagItems.GetNotesForTag(tag.ID, maxNotes)
+			if err == nil {
+				for _, n := range notes {
+					if !seenIDs[n.ID] {
+						candidates = append(candidates, n)
+						seenIDs[n.ID] = true
+					}
+				}
+			}
+		}
+	}
+
+	// 3. Sequential
+	if len(candidates) < maxNotes {
+		prev, err := app.getModels(r).Notes.GetPreviousPublished(*note.PublishedAt)
+		if err == nil && prev != nil && !seenIDs[prev.ID] {
+			candidates = append(candidates, prev)
+			seenIDs[prev.ID] = true
+		}
+	}
+
+	if len(candidates) < maxNotes {
+		next, err := app.getModels(r).Notes.GetNextPublished(*note.PublishedAt)
+		if err == nil && next != nil && !seenIDs[next.ID] {
+			candidates = append(candidates, next)
+			seenIDs[next.ID] = true
+		}
+	}
+
+	if len(candidates) > maxNotes {
+		candidates = candidates[:maxNotes]
+	}
+
+	result := make([]publicNote, 0, len(candidates))
+	for _, n := range candidates {
+		nTags, err := app.getModels(r).TagItems.GetTagsForItem(data.ItemTypeNotes, n.ID)
+		if err != nil {
+			nTags = []*data.Tag{}
+		}
+		result = append(result, buildPublicNote(n, nTags, nil, nil))
+	}
+
+	return result, nil
+}
+
+func buildPublicNote(note *data.Note, tags []*data.Tag, relatedItems []publicRelatedItem, relatedNotes []publicNote) publicNote {
 	publishedAt := ""
 	if note.PublishedAt != nil {
 		publishedAt = formatTime(*note.PublishedAt)
@@ -479,6 +558,7 @@ func buildPublicNote(note *data.Note, tags []*data.Tag, relatedItems []publicRel
 		IsFeatured:   hasFeaturedTag(publicTags),
 		Tags:         publicTags,
 		RelatedItems: relatedItems,
+		RelatedNotes: relatedNotes,
 	}
 }
 

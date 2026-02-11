@@ -5,6 +5,8 @@ import (
 	"errors"
 	"log"
 
+	"time"
+
 	"api.etin.dev/pkg/querybuilder"
 )
 
@@ -207,6 +209,76 @@ func (t TagItemModel) RemoveTagFromItem(tagID, itemID int64, itemType ItemType) 
 	}
 
 	return nil
+}
+
+func (t TagItemModel) GetNotesForTag(tagID int64, limit int) ([]*Note, error) {
+	rows, err := t.Query.SetBaseTable("tagged_items").Select(
+		"notes.id AS id",
+		"notes.createdAt AS createdAt",
+		"notes.updatedAt AS updatedAt",
+		"notes.deletedAt AS deletedAt",
+		"notes.publishedAt AS publishedAt",
+		"notes.title AS title",
+		"notes.subtitle AS subtitle",
+		"notes.slug AS slug",
+		"notes.body AS body",
+	).LeftJoin("notes", "itemId", "id").
+		WhereEqual("tagged_items.tagId", tagID).
+		WhereEqual("tagged_items.itemType", string(ItemTypeNotes)).
+		WhereEqual("notes.deletedAt", nil).
+		WhereLessThanEqual("notes.publishedAt", time.Now()).
+		OrderBy("notes.publishedAt", "DESC").
+		Limit(limit).
+		Query()
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	notes := make([]*Note, 0)
+
+	for rows.Next() {
+		note := &Note{}
+		var deletedAt sql.NullTime
+		var publishedAt sql.NullTime
+		var slug sql.NullString
+
+		err := rows.Scan(
+			&note.ID,
+			&note.CreatedAt,
+			&note.UpdatedAt,
+			&deletedAt,
+			&publishedAt,
+			&note.Title,
+			&note.Subtitle,
+			&slug,
+			&note.Body,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if deletedAt.Valid {
+			note.DeletedAt = &deletedAt.Time
+		}
+
+		if publishedAt.Valid {
+			note.PublishedAt = &publishedAt.Time
+		}
+
+		if slug.Valid {
+			note.Slug = slug.String
+		}
+
+		notes = append(notes, note)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return notes, nil
 }
 
 func (t TagItemModel) GetTagsForItem(itemType ItemType, itemID int64) ([]*Tag, error) {

@@ -373,6 +373,122 @@ func (n NoteModel) GetAllPublished() ([]*Note, error) {
 	return notes, nil
 }
 
+func (n NoteModel) GetPreviousPublished(publishedAt time.Time) (*Note, error) {
+	row, err := n.Query.SetBaseTable("notes").Select(
+		"id",
+		"createdAt",
+		"updatedAt",
+		"deletedAt",
+		"publishedAt",
+		"title",
+		"subtitle",
+		"slug",
+		"body",
+	).WhereEqual("deletedAt", nil).
+		WhereLessThan("publishedAt", publishedAt).
+		OrderBy("publishedAt", "desc").
+		Limit(1).
+		QueryRow()
+	if err != nil {
+		return nil, err
+	}
+
+	var note Note
+	var deletedAt sql.NullTime
+	var publishedAtVal sql.NullTime
+	var slugVal sql.NullString
+
+	err = row.Scan(
+		&note.ID,
+		&note.CreatedAt,
+		&note.UpdatedAt,
+		&deletedAt,
+		&publishedAtVal,
+		&note.Title,
+		&note.Subtitle,
+		&slugVal,
+		&note.Body,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("record not found")
+		}
+		return nil, err
+	}
+
+	if deletedAt.Valid {
+		note.DeletedAt = &deletedAt.Time
+	}
+
+	if publishedAtVal.Valid {
+		note.PublishedAt = &publishedAtVal.Time
+	}
+
+	if slugVal.Valid {
+		note.Slug = slugVal.String
+	}
+
+	return &note, nil
+}
+
+func (n NoteModel) GetNextPublished(publishedAt time.Time) (*Note, error) {
+	row, err := n.Query.SetBaseTable("notes").Select(
+		"id",
+		"createdAt",
+		"updatedAt",
+		"deletedAt",
+		"publishedAt",
+		"title",
+		"subtitle",
+		"slug",
+		"body",
+	).WhereEqual("deletedAt", nil).
+		WhereGreaterThan("publishedAt", publishedAt).
+		OrderBy("publishedAt", "asc").
+		Limit(1).
+		QueryRow()
+	if err != nil {
+		return nil, err
+	}
+
+	var note Note
+	var deletedAt sql.NullTime
+	var publishedAtVal sql.NullTime
+	var slugVal sql.NullString
+
+	err = row.Scan(
+		&note.ID,
+		&note.CreatedAt,
+		&note.UpdatedAt,
+		&deletedAt,
+		&publishedAtVal,
+		&note.Title,
+		&note.Subtitle,
+		&slugVal,
+		&note.Body,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("record not found")
+		}
+		return nil, err
+	}
+
+	if deletedAt.Valid {
+		note.DeletedAt = &deletedAt.Time
+	}
+
+	if publishedAtVal.Valid {
+		note.PublishedAt = &publishedAtVal.Time
+	}
+
+	if slugVal.Valid {
+		note.Slug = slugVal.String
+	}
+
+	return &note, nil
+}
+
 func (n NoteModel) GetBySlug(slug string) (*Note, error) {
 	row, err := n.Query.SetBaseTable("notes").Select(
 		"id",
