@@ -108,6 +108,13 @@ func buildSchemas() map[string]any {
 				"message": stringSchema("Confirmation message."),
 			},
 		},
+		"AdminVerifyResponse": map[string]any{
+			"type":     "object",
+			"required": []string{"valid"},
+			"properties": map[string]any{
+				"valid": boolSchema("Indicates whether the supplied admin bearer token is active."),
+			},
+		},
 		"HealthcheckResponse": map[string]any{
 			"type":     "object",
 			"required": []string{"status", "environment", "version"},
@@ -804,6 +811,18 @@ func buildPaths() map[string]any {
 				"security":    bearerSecurity,
 				"responses": map[string]any{
 					"200": jsonResponse("Admin session revoked.", "AdminLogoutResponse"),
+					"401": noContent("Missing or invalid bearer token."),
+				},
+			},
+		},
+		"/v1/admin/verify": map[string]any{
+			"get": map[string]any{
+				"operationId": "adminVerify",
+				"summary":     "Verify whether the current admin session token is valid",
+				"tags":        []string{"Administration"},
+				"security":    bearerSecurity,
+				"responses": map[string]any{
+					"200": jsonResponse("Admin session token is valid.", "AdminVerifyResponse"),
 					"401": noContent("Missing or invalid bearer token."),
 				},
 			},

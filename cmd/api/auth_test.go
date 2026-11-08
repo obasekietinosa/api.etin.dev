@@ -1,6 +1,11 @@
 package main
 
-import "testing"
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+)
 
 func TestParseBearerToken(t *testing.T) {
 	tests := []struct {
@@ -35,5 +40,34 @@ func TestParseBearerToken(t *testing.T) {
 				t.Fatalf("expected %q got %q", tt.want, got)
 			}
 		})
+	}
+}
+
+func TestAdminVerifyHandler(t *testing.T) {
+	app := &application{
+		sessions: newSessionManager(time.Hour),
+	}
+
+	token, _, err := app.sessions.create()
+	if err != nil {
+		t.Fatalf("create session: %v", err)
+	}
+
+	reqValid := httptest.NewRequest(http.MethodGet, "/v1/admin/verify", nil)
+	reqValid.Header.Set("Authorization", "Bearer "+token)
+	recValid := httptest.NewRecorder()
+	app.adminVerifyHandler(recValid, reqValid)
+
+	if recValid.Code != http.StatusOK {
+		t.Fatalf("expected status 200 for valid token, got %d", recValid.Code)
+	}
+
+	reqInvalid := httptest.NewRequest(http.MethodGet, "/v1/admin/verify", nil)
+	reqInvalid.Header.Set("Authorization", "Bearer invalid-token")
+	recInvalid := httptest.NewRecorder()
+	app.adminVerifyHandler(recInvalid, reqInvalid)
+
+	if recInvalid.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status 401 for invalid token, got %d", recInvalid.Code)
 	}
 }

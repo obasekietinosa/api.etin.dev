@@ -45,6 +45,18 @@
         },
         "type": "object"
       },
+      "AdminVerifyResponse": {
+        "properties": {
+          "valid": {
+            "description": "Indicates whether the supplied admin bearer token is active.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "valid"
+        ],
+        "type": "object"
+      },
       "Asset": {
         "properties": {
           "bytes": {
@@ -1420,6 +1432,35 @@
           }
         ],
         "summary": "Invalidate the current admin session token",
+        "tags": [
+          "Administration"
+        ]
+      }
+    },
+    "/v1/admin/verify": {
+      "get": {
+        "operationId": "adminVerify",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminVerifyResponse"
+                }
+              }
+            },
+            "description": "Admin session token is valid."
+          },
+          "401": {
+            "description": "Missing or invalid bearer token."
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Verify whether the current admin session token is valid",
         "tags": [
           "Administration"
         ]

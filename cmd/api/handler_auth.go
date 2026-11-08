@@ -49,3 +49,13 @@ func (app *application) adminLogoutHandler(w http.ResponseWriter, r *http.Reques
 	app.sessions.revoke(token)
 	app.writeJSON(w, http.StatusOK, envelope{"message": "logged out"})
 }
+
+func (app *application) adminVerifyHandler(w http.ResponseWriter, r *http.Request) {
+	token, err := parseBearerToken(r.Header.Get("Authorization"))
+	if err != nil || !app.sessions.validate(token) {
+		app.writeError(w, http.StatusUnauthorized)
+		return
+	}
+
+	app.writeJSON(w, http.StatusOK, envelope{"valid": true})
+}
