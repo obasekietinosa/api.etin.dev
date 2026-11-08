@@ -19,6 +19,7 @@ func (app *application) routes() http.Handler {
 	mux.HandleFunc("GET /v1/healthcheck", app.healthcheck)
 	mux.HandleFunc("POST /v1/admin/login", app.adminLoginHandler)
 	mux.HandleFunc("POST /v1/admin/logout", app.adminLogoutHandler)
+	mux.HandleFunc("GET /v1/admin/verify", app.adminVerifyHandler)
 
 	mux.HandleFunc("POST /v1/assets", app.getCreateAssetsHandler)
 
